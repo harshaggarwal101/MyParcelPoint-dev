@@ -427,211 +427,274 @@ const Warehouse = () => {
   );
 
   return (
-    <div className="warehouse-container">
-      <div className="warehouse-sidebar">
-        <Sidebar />
-      </div>
-
-      <main className="warehouse-main">
-        {/* Orange Gradient Header */}
-        <div className="warehouse-header">
-          <div className="warehouse-header-left">
-            <div className="warehouse-header-icon">
-              <WarehouseIcon />
-            </div>
-            <div>
-              <h1 className="warehouse-header-title">Warehouses</h1>
-              <p className="warehouse-header-subtitle">Manage your warehouse locations</p>
-            </div>
-          </div>
-          <div className="warehouse-header-actions">
-            <button className="warehouse-header-btn warehouse-header-btn-primary" onClick={() => handleOpenDialog()}>
-              <AddIcon /> Add Warehouse
-            </button>
-          </div>
+    <div className="merchant-scope">
+      <div className="warehouse-container">
+        <div className="warehouse-sidebar">
+          <Sidebar />
         </div>
 
-        {/* Stats Cards */}
-        <div className="warehouse-stats-grid">
-          <div className="warehouse-stat-card">
-            <div className="warehouse-stat-label">Total Warehouses</div>
-            <div className="warehouse-stat-value">{warehouses.length}</div>
-          </div>
-          <div className="warehouse-stat-card">
-            <div className="warehouse-stat-label">Active</div>
-            <div className="warehouse-stat-value success">
-              {warehouses.filter((w) => w.isActive).length}
+        <main className="warehouse-main">
+          {/* Orange Gradient Header */}
+          <div className="warehouse-header">
+            <div className="warehouse-header-left">
+              <div className="warehouse-header-icon">
+                <WarehouseIcon />
+              </div>
+              <div>
+                <h1 className="warehouse-header-title">Warehouses</h1>
+                <p className="warehouse-header-subtitle">Manage your warehouse locations</p>
+              </div>
+            </div>
+            <div className="warehouse-header-actions">
+              <button className="warehouse-header-btn warehouse-header-btn-primary" onClick={() => handleOpenDialog()}>
+                <AddIcon /> Add Warehouse
+              </button>
             </div>
           </div>
-          <div className="warehouse-stat-card">
-            <div className="warehouse-stat-label">Default</div>
-            <div className="warehouse-stat-value primary">
-              {warehouses.filter((w) => w.isDefault).length}
-            </div>
-          </div>
-          <div className="warehouse-stat-card">
-            <div className="warehouse-stat-label">Total Capacity</div>
-            <div className="warehouse-stat-value orange">
-              {warehouses.reduce((sum, w) => sum + (parseInt(w.dailyCapacity) || 0), 0)}
-            </div>
-          </div>
-        </div>
 
-        {/* Search and Filter */}
-        <div className="warehouse-search-filter">
-          <Grid container spacing={2} alignItems="center">
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                placeholder="Search warehouses by name, code, company, city, or contact person..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon />
-                    </InputAdornment>
-                  ),
-                }}
-              />
+          {/* Stats Cards */}
+          <div className="warehouse-stats-grid">
+            <div className="warehouse-stat-card">
+              <div className="warehouse-stat-label">Total Warehouses</div>
+              <div className="warehouse-stat-value">{warehouses.length}</div>
+            </div>
+            <div className="warehouse-stat-card">
+              <div className="warehouse-stat-label">Active</div>
+              <div className="warehouse-stat-value success">
+                {warehouses.filter((w) => w.isActive).length}
+              </div>
+            </div>
+            <div className="warehouse-stat-card">
+              <div className="warehouse-stat-label">Default</div>
+              <div className="warehouse-stat-value primary">
+                {warehouses.filter((w) => w.isDefault).length}
+              </div>
+            </div>
+            <div className="warehouse-stat-card">
+              <div className="warehouse-stat-label">Total Capacity</div>
+              <div className="warehouse-stat-value orange">
+                {warehouses.reduce((sum, w) => sum + (parseInt(w.dailyCapacity) || 0), 0)}
+              </div>
+            </div>
+          </div>
+
+          {/* Search and Filter */}
+          <div className="warehouse-search-filter">
+            <Grid container spacing={2} alignItems="center">
+              <Grid item xs={12} md={8}>
+                <TextField
+                  fullWidth
+                  placeholder="Search warehouses by name, code, company, city, or contact person..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <SearchIcon sx={{ color: "#f97316" }} />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              </Grid>
+              <Grid item xs={12} md={4}>
+                <FormControl fullWidth>
+                  <InputLabel>Filter by Status</InputLabel>
+                  <Select
+                    value={filterStatus}
+                    onChange={(e) => setFilterStatus(e.target.value)}
+                    label="Filter by Status"
+                  >
+                    <MenuItem value="ALL">All Status</MenuItem>
+                    <MenuItem value="ACTIVE">Active</MenuItem>
+                    <MenuItem value="INACTIVE">Inactive</MenuItem>
+                    <MenuItem value="DEFAULT">Default</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
             </Grid>
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth>
-                <InputLabel>Filter by Status</InputLabel>
-                <Select
-                  value={filterStatus}
-                  onChange={(e) => setFilterStatus(e.target.value)}
-                  label="Filter by Status"
-                >
-                  <MenuItem value="ALL">All</MenuItem>
-                  <MenuItem value="ACTIVE">Active</MenuItem>
-                  <MenuItem value="INACTIVE">Inactive</MenuItem>
-                  <MenuItem value="DEFAULT">Default</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-          </Grid>
-        </div>
+          </div>
 
-        {/* Warehouse Table */}
-        <div className="warehouse-table-wrapper">
-          <TableContainer>
-            <Table stickyHeader>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Warehouse</TableCell>
-                  <TableCell>Code</TableCell>
-                  <TableCell>Company</TableCell>
-                  <TableCell>City</TableCell>
-                  <TableCell>State</TableCell>
-                  <TableCell>Phone</TableCell>
-                  <TableCell>Default</TableCell>
-                  <TableCell>COD</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell align="center">Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {loading ? (
-                  renderSkeleton()
-                ) : filteredWarehouses.length === 0 ? (
+          {/* Warehouse Table */}
+          <div className="warehouse-table-wrapper">
+            <TableContainer>
+              <Table stickyHeader>
+                <TableHead>
                   <TableRow>
-                    <TableCell colSpan={10} align="center" sx={{ p: 0 }}>
-                      {renderEmptyState()}
-                    </TableCell>
+                    <TableCell>Warehouse</TableCell>
+                    <TableCell>Code</TableCell>
+                    <TableCell>Company</TableCell>
+                    <TableCell>City</TableCell>
+                    <TableCell>State</TableCell>
+                    <TableCell>Phone</TableCell>
+                    <TableCell align="center">Default</TableCell>
+                    <TableCell align="center">COD</TableCell>
+                    <TableCell align="center">Status</TableCell>
+                    <TableCell align="center">Actions</TableCell>
                   </TableRow>
-                ) : (
-                  filteredWarehouses
-                    .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                    .map((warehouse) => (
-                      <TableRow key={warehouse._id} hover>
-                        <TableCell>
-                          <Typography variant="body2" fontWeight="bold">
-                            {warehouse.warehouseName}
-                          </Typography>
-                          <Typography variant="caption" color="textSecondary">
-                            {getTypeChip(warehouse.warehouseType)}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Typography variant="body2" color="textSecondary">
-                            {warehouse.warehouseCode}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>{warehouse.companyName}</TableCell>
-                        <TableCell>{warehouse.city}</TableCell>
-                        <TableCell>{warehouse.state}</TableCell>
-                        <TableCell>{warehouse.phone}</TableCell>
-                        <TableCell>
-                          {warehouse.isDefault ? (
-                            <Chip label="Default" color="primary" size="small" />
-                          ) : (
-                            <Button
-                              size="small"
-                              variant="outlined"
-                              onClick={() => handleSetDefault(warehouse._id)}
-                            >
-                              Set Default
-                            </Button>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {warehouse.allowCOD ? (
-                            <Chip label="Yes" color="success" size="small" />
-                          ) : (
-                            <Chip label="No" color="default" size="small" />
-                          )}
-                        </TableCell>
-                        <TableCell>{getStatusChip(warehouse.isActive)}</TableCell>
-                        <TableCell align="center">
-                          <Tooltip title="Toggle Status">
-                            <Switch
-                              checked={warehouse.isActive}
-                              onChange={() => handleToggleStatus(warehouse._id, warehouse.isActive)}
-                              size="small"
-                            />
-                          </Tooltip>
-                          <Tooltip title="Edit">
-                            <IconButton
-                              size="small"
-                              color="primary"
-                              onClick={() => handleOpenDialog(warehouse)}
-                            >
-                              <EditIcon />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title="Delete">
-                            <IconButton
-                              size="small"
-                              color="error"
-                              onClick={() =>
-                                setDeleteDialog({
-                                  open: true,
-                                  warehouseId: warehouse._id,
-                                  warehouseName: warehouse.warehouseName,
-                                })
-                              }
-                            >
-                              <DeleteIcon />
-                            </IconButton>
-                          </Tooltip>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-          <TablePagination
-            rowsPerPageOptions={[5, 10, 25, 50]}
-            component="div"
-            count={filteredWarehouses.length}
-            rowsPerPage={rowsPerPage}
-            page={page}
-            onPageChange={handleChangePage}
-            onRowsPerPageChange={handleChangeRowsPerPage}
-          />
-        </div>
+                </TableHead>
+                <TableBody>
+                  {loading ? (
+                    renderSkeleton()
+                  ) : filteredWarehouses.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={10} align="center" sx={{ p: 0 }}>
+                        {renderEmptyState()}
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredWarehouses
+                      .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                      .map((warehouse) => (
+                        <TableRow key={warehouse._id} hover>
+                          <TableCell>
+                            <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
+                              <span style={{ fontWeight: 600, color: "#f8fafc", fontSize: "14px" }}>
+                                {warehouse.warehouseName}
+                              </span>
+                              {warehouse.isDefault && (
+                                <span style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  fontSize: "10.5px",
+                                  fontWeight: 600,
+                                  color: "#38bdf8",
+                                  background: "rgba(56, 189, 248, 0.12)",
+                                  padding: "1px 6px",
+                                  borderRadius: "4px",
+                                  width: "fit-content"
+                                }}>
+                                  ★ Primary
+                                </span>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <span style={{
+                              fontFamily: 'monospace',
+                              color: '#fb923c',
+                              background: 'rgba(249, 115, 22, 0.12)',
+                              padding: '3px 8px',
+                              borderRadius: '6px',
+                              fontSize: '12px',
+                              fontWeight: 600
+                            }}>
+                              {warehouse.warehouseCode}
+                            </span>
+                          </TableCell>
+                          <TableCell style={{ color: "#cbd5e1" }}>{warehouse.companyName || "-"}</TableCell>
+                          <TableCell style={{ color: "#cbd5e1" }}>{warehouse.city || "-"}</TableCell>
+                          <TableCell style={{ color: "#cbd5e1" }}>{warehouse.state || "-"}</TableCell>
+                          <TableCell style={{ color: "#cbd5e1" }}>{warehouse.phone || "-"}</TableCell>
+                          <TableCell align="center">
+                            {warehouse.isDefault ? (
+                              <Chip 
+                                label="Default" 
+                                size="small" 
+                                sx={{ 
+                                  bgcolor: 'rgba(59, 130, 246, 0.2)', 
+                                  color: '#60a5fa', 
+                                  fontWeight: 700, 
+                                  border: '1px solid rgba(59, 130, 246, 0.4)',
+                                  borderRadius: '6px'
+                                }} 
+                              />
+                            ) : (
+                              <Button
+                                size="small"
+                                variant="outlined"
+                                onClick={() => handleSetDefault(warehouse._id)}
+                                sx={{
+                                  color: '#94a3b8',
+                                  borderColor: '#334155',
+                                  fontSize: '11px',
+                                  textTransform: 'none',
+                                  borderRadius: '6px',
+                                  py: 0.4,
+                                  px: 1,
+                                  '&:hover': {
+                                    borderColor: '#f97316',
+                                    color: '#f97316',
+                                    bgcolor: 'rgba(249, 115, 22, 0.08)'
+                                  }
+                                }}
+                              >
+                                Set Default
+                              </Button>
+                            )}
+                          </TableCell>
+                          <TableCell align="center">
+                            {warehouse.allowCOD ? (
+                              <Chip label="Yes" size="small" sx={{ bgcolor: 'rgba(34, 197, 94, 0.15)', color: '#4ade80', fontWeight: 600, borderRadius: '6px' }} />
+                            ) : (
+                              <Chip label="No" size="small" sx={{ bgcolor: 'rgba(148, 163, 184, 0.1)', color: '#94a3b8', borderRadius: '6px' }} />
+                            )}
+                          </TableCell>
+                          <TableCell align="center">
+                            {warehouse.isActive ? (
+                              <Chip label="Active" size="small" sx={{ bgcolor: 'rgba(34, 197, 94, 0.15)', color: '#4ade80', fontWeight: 600, borderRadius: '6px' }} />
+                            ) : (
+                              <Chip label="Inactive" size="small" sx={{ bgcolor: 'rgba(239, 68, 68, 0.15)', color: '#f87171', fontWeight: 600, borderRadius: '6px' }} />
+                            )}
+                          </TableCell>
+                          <TableCell align="center">
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                              <Tooltip title="Toggle Status">
+                                <Switch
+                                  checked={warehouse.isActive}
+                                  onChange={() => handleToggleStatus(warehouse._id, warehouse.isActive)}
+                                  size="small"
+                                  sx={{
+                                    '& .MuiSwitch-switchBase.Mui-checked': {
+                                      color: '#f97316',
+                                    },
+                                    '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                                      backgroundColor: '#f97316',
+                                    },
+                                  }}
+                                />
+                              </Tooltip>
+                              <Tooltip title="Edit Warehouse">
+                                <IconButton
+                                  size="small"
+                                  onClick={() => handleOpenDialog(warehouse)}
+                                  sx={{ color: '#38bdf8', '&:hover': { bgcolor: 'rgba(56, 189, 248, 0.1)' } }}
+                                >
+                                  <EditIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title="Delete Warehouse">
+                                <IconButton
+                                  size="small"
+                                  onClick={() =>
+                                    setDeleteDialog({
+                                      open: true,
+                                      warehouseId: warehouse._id,
+                                      warehouseName: warehouse.warehouseName,
+                                    })
+                                  }
+                                  sx={{ color: '#f87171', '&:hover': { bgcolor: 'rgba(248, 113, 113, 0.1)' } }}
+                                >
+                                  <DeleteIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+            <TablePagination
+              rowsPerPageOptions={[5, 10, 25, 50]}
+              component="div"
+              count={filteredWarehouses.length}
+              rowsPerPage={rowsPerPage}
+              page={page}
+              onPageChange={handleChangePage}
+              onRowsPerPageChange={handleChangeRowsPerPage}
+            />
+          </div>
 
         {/* ============================================ */}
         {/* ADD/EDIT DIALOG - PROFESSIONAL CARDS LAYOUT */}
@@ -1313,6 +1376,7 @@ const Warehouse = () => {
         </Snackbar>
       </main>
     </div>
+  </div>
   );
 };
 

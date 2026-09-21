@@ -1,30 +1,9 @@
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/Sidebar';
 import api from '../../services/api';
-import { 
-  FaSearch, 
-  FaDownload, 
-  FaEye, 
-  FaBox, 
-  FaClock, 
-  FaCheckCircle, 
-  FaExclamationTriangle,
-  FaUndo,
-  FaFilter,
-  FaSync,
-  FaCopy,
-  FaTruck,
-  FaPhone,
-  FaTimes,
-  FaUser,
-  FaMapMarkerAlt,
-  FaCalendarAlt,
-  FaFileAlt,
-  FaInfoCircle,
-  FaLocationArrow
-} from 'react-icons/fa';
+import { FaSearch, FaDownload, FaEye, FaBox, FaClock, FaCheckCircle, FaUndo, FaFilter, FaSync, FaCopy, FaTruck, FaPhone, FaTimes, FaUser, FaMapMarkerAlt, FaCalendarAlt, FaFileAlt, FaInfoCircle, FaLocationArrow } from 'react-icons/fa';
 import "./MerchantRTO.css"; 
 
 const MerchantRTO = () => {
@@ -122,7 +101,7 @@ const MerchantRTO = () => {
     try {
       await navigator.clipboard.writeText(awb);
       showToast('AWB copied to clipboard', 'success');
-    } catch (err) {
+    } catch {
       showToast('Failed to copy AWB', 'error');
     }
   };

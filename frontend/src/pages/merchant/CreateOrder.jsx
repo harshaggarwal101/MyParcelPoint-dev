@@ -43,7 +43,7 @@ const CreateOrder = () => {
       if (activeW.length > 0) {
         setFormData((prev) => ({ ...prev, warehouseId: activeW[0]._id }));
       }
-    } catch (err) {
+    } catch {
       setWarehouses([]);
     }
   };

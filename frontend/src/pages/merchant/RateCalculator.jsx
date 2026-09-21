@@ -1,10 +1,6 @@
 import { useState, useCallback } from "react";
 import Sidebar from "../../components/Sidebar";
-import {
-  FaCalculator, FaTruck, FaPlane, FaClock, FaRupeeSign,
-  FaBox, FaRulerCombined, FaCreditCard, FaCheckCircle,
-  FaChevronDown, FaChevronUp, FaSpinner, FaMapMarkerAlt,
-} from "react-icons/fa";
+import { FaCalculator, FaTruck, FaPlane, FaClock, FaBox, FaRulerCombined, FaCreditCard, FaChevronDown, FaChevronUp, FaSpinner, FaMapMarkerAlt } from "react-icons/fa";
 import api from "../../services/api";
 
 // ─────────────────────────────────────────────────────────────────

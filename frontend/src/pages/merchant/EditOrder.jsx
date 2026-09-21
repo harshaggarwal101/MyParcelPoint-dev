@@ -2,19 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Sidebar from "../../components/Sidebar";
 import api from "../../services/api";
-import {
-  FaSave,
-  FaTimes,
-  FaSpinner,
-  FaArrowLeft,
-  FaEdit,
-  FaUser,
-  FaPhone,
-  FaMapMarkerAlt,
-  FaBox,
-  FaRupeeSign,
-  FaExclamationTriangle,
-} from "react-icons/fa";
+import { FaSave, FaTimes, FaSpinner, FaArrowLeft, FaEdit, FaUser, FaMapMarkerAlt, FaBox, FaRupeeSign, FaExclamationTriangle } from "react-icons/fa";
 
 const EditOrder = () => {
   const navigate = useNavigate();

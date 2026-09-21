@@ -1,14 +1,7 @@
 import { useEffect, useState } from "react";
 import AdminSidebar from "../../components/admin/AdminSidebar";
 import api from "../../services/api";
-import {
-  FaUsers,
-  FaUserShield,
-  FaUserTie,
-  FaUserClock,
-  FaSearch,
-  FaTrash,
-} from "react-icons/fa";
+import { FaSearch } from "react-icons/fa";
 import "./Users.css"; 
 
 const Users = () => {

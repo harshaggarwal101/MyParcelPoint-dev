@@ -1,7 +1,7 @@
 import { useState } from "react";
 import Sidebar from "../../components/Sidebar";
 import api from "../../services/api";
-import { FaLock, FaKey, FaShieldAlt, FaCheckCircle, FaExclamationTriangle, FaCog } from "react-icons/fa";
+import { FaLock, FaKey, FaShieldAlt, FaCheckCircle, FaCog } from "react-icons/fa";
 import "./Settings.css";
 
 const Settings = () => {

@@ -2,24 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AdminSidebar from "../../components/admin/AdminSidebar";
 import api from "../../services/api";
-import { 
-  FaUsers, 
-  FaTruck, 
-  FaRupeeSign, 
-  FaBox, 
-  FaStore, 
-  FaTags, 
-  FaEye, 
-  FaArrowRight,
-  FaPlus,
-  FaCalculator,
-  FaExclamationTriangle,
-  FaUndo,
-  FaCheckCircle,
-  FaUserCheck,
-  FaClock,
-  FaShieldAlt
-} from "react-icons/fa";
+import { FaTruck, FaRupeeSign, FaBox, FaStore, FaEye, FaArrowRight, FaExclamationTriangle, FaUndo, FaUserCheck } from "react-icons/fa";
 import "./Dashboard.css"; 
 
 const Dashboard = () => {

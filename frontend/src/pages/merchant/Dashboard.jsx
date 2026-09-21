@@ -1,16 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { 
-  FaWallet, 
-  FaPlusCircle, 
-  FaPlus, 
-  FaTruck, 
-  FaBoxOpen, 
-  FaCalculator, 
-  FaTags, 
-  FaEye, 
-  FaArrowRight
-} from "react-icons/fa";
+import { FaPlus, FaTruck, FaBoxOpen, FaCalculator, FaTags, FaEye, FaArrowRight } from "react-icons/fa";
 import Sidebar from "../../components/Sidebar";
 import BulkUploadModal from "../../components/BulkUploadModal";
 import MerchantHeader from "../../components/MerchantHeader";

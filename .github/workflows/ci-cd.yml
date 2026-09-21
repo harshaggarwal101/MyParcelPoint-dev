@@ -29,10 +29,11 @@ jobs:
           npm ci
           git ls-files '*.js' | grep -v '^tests/' | xargs -n1 node --check
 
-      - name: Frontend - install and build
+      - name: Frontend - install, lint and build
         working-directory: frontend
         run: |
           npm ci
+          npm run lint
           npm run build
 
       - name: Compose file is valid

@@ -1,22 +1,6 @@
 import { useState, useEffect } from "react";
-import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
-import {
-  FaHome,
-  FaUsers,
-  FaStore,
-  FaTruck,
-  FaRupeeSign,
-  FaChartBar,
-  FaCog,
-  FaSignOutAlt,
-  FaClipboardList,
-  FaBox,
-  FaExclamationTriangle,
-  FaUndo,
-  FaTicketAlt,
-  FaBars,
-  FaTimes,
-} from "react-icons/fa";
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
+import { FaHome, FaUsers, FaStore, FaRupeeSign, FaChartBar, FaCog, FaSignOutAlt, FaClipboardList, FaBox, FaExclamationTriangle, FaUndo, FaTicketAlt, FaBars, FaTimes } from "react-icons/fa";
 
 import "./AdminSidebar.css"; // Merchant wala CSS use karo
 

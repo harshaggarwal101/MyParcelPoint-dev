@@ -405,7 +405,7 @@ const Shipments = () => {
                                     const res = await api.get(`/shipments/${shipment._id}/timeline`); 
                                     setSelectedTimeline(res.data.timeline); 
                                     setShowModal(true); 
-                                  } catch (err) { 
+                                  } catch { 
                                     alert("Timeline not available"); 
                                   } 
                                 }} 

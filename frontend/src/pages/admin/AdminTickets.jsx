@@ -1,20 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  FaTicketAlt,
-  FaSearch,
-  FaEye,
-  FaSync,
-  FaCheck,
-  FaTimes,
-  FaReply,
-  FaUser,
-  FaEnvelope,
-  FaCalendarAlt,
-  FaTag,
-  FaBox,
-  FaExclamationTriangle,
-  FaClock,
-} from "react-icons/fa";
+import { FaTicketAlt, FaSearch, FaEye, FaSync, FaCheck, FaTimes, FaReply, FaUser, FaEnvelope, FaTag, FaBox, FaExclamationTriangle, FaClock } from "react-icons/fa";
 
 import AdminSidebar from "../../components/admin/AdminSidebar";
 import api from "../../services/api";

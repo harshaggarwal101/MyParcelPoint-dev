@@ -2,19 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import Sidebar from "../../components/Sidebar";
 import api from "../../services/api";
-import {
-  FaTruck,
-  FaBox,
-  FaUser,
-  FaPhone,
-  FaMapMarkerAlt,
-  FaRupeeSign,
-  FaCheck,
-  FaTimes,
-  FaSpinner,
-  FaArrowLeft,
-  FaFileExport,
-} from "react-icons/fa";
+import { FaTruck, FaTimes, FaSpinner, FaArrowLeft } from "react-icons/fa";
 
 const BulkShipment = () => {
   const navigate = useNavigate();

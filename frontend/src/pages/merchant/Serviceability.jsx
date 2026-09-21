@@ -1,20 +1,7 @@
 import { useState } from "react";
 import Sidebar from "../../components/Sidebar";
 import api from "../../services/api";
-import {
-  FaMapMarkerAlt,
-  FaSearch,
-  FaCheckCircle,
-  FaTimesCircle,
-  FaTruck,
-  FaPlane,
-  FaExchangeAlt,
-  FaClock,
-  FaBox,
-  FaShieldAlt,
-  FaInfoCircle,
-  FaLocationArrow,
-} from "react-icons/fa";
+import { FaMapMarkerAlt, FaSearch, FaCheckCircle, FaTimesCircle, FaTruck, FaPlane, FaExchangeAlt, FaClock, FaInfoCircle, FaLocationArrow } from "react-icons/fa";
 import "./Serviceability.css";
 
 const PRESET_PINCODES = [

@@ -96,7 +96,7 @@ const Wallet = () => {
       let userObj = {};
       try {
         userObj = JSON.parse(localStorage.getItem("user") || "{}");
-      } catch (e) {}
+      } catch { /* keep default empty user */ }
 
       // 3. Razorpay Checkout popup open karo
       const options = {

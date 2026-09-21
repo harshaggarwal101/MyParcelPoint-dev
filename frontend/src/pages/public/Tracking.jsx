@@ -3,7 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import api from "../../services/api";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
-import { FaSearch, FaTruck, FaClock, FaExclamationTriangle, FaCheckCircle, FaMapMarkerAlt, FaSpinner } from "react-icons/fa";
+import { FaTruck, FaExclamationTriangle, FaMapMarkerAlt, FaSpinner } from "react-icons/fa";
 import "./TrackingPage.css";
 
 function TrackingPage() {

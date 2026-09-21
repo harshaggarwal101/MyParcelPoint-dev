@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import Sidebar from '../../components/Sidebar';
 import api from '../../services/api';
 import { 
@@ -130,7 +130,7 @@ const MerchantNDR = () => {
     try {
       await navigator.clipboard.writeText(awb);
       showToast('AWB copied to clipboard', 'success');
-    } catch (err) {
+    } catch {
       showToast('Failed to copy AWB', 'error');
     }
   };

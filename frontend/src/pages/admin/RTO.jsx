@@ -1,25 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import {
-  FaUndo,
-  FaTruck,
-  FaExclamationTriangle,
-  FaEye,
-  FaCheckCircle,
-  FaTimes,
-  FaSync,
-  FaChevronDown,
-  FaUser,
-  FaBox,
-  FaPhone,
-  FaCalendarAlt,
-  FaSearch,
-  FaSpinner,
-  FaClock,
-  FaStore,
-  FaBuilding,
-  FaClipboardList,
-  FaUserTie
-} from "react-icons/fa";
+import { FaUndo, FaTruck, FaExclamationTriangle, FaEye, FaTimes, FaSync, FaChevronDown, FaUser, FaPhone, FaSearch, FaSpinner, FaClock, FaStore, FaClipboardList } from "react-icons/fa";
 import AdminSidebar from "../../components/admin/AdminSidebar";
 import api from "../../services/api";
 import "./RTO.css";

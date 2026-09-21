@@ -1,16 +1,7 @@
 import { useState, useEffect } from "react";
 import api from "../../services/api";
 import SuperAdminLayout from "./SuperAdminLayout";
-import {
-  FaServer,
-  FaCheckCircle,
-  FaExclamationTriangle,
-  FaClock,
-  FaSync,
-  FaBolt,
-  FaDatabase,
-  FaGlobe,
-} from "react-icons/fa";
+import { FaServer, FaCheckCircle, FaClock, FaSync, FaBolt, FaDatabase, FaGlobe } from "react-icons/fa";
 import "./ApiMonitoring.css";
 
 const ApiMonitoring = () => {

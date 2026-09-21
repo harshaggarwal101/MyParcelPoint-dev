@@ -1,10 +1,6 @@
 import { useState, useEffect } from "react";
 import api from "../services/api";
-import { 
-  FaBuilding, FaFileInvoice, FaRegIdCard, 
-  FaMapMarkerAlt, FaUniversity, FaCheckCircle, 
-  FaArrowLeft, FaSignOutAlt, FaClock, FaSync, FaHourglassHalf
-} from "react-icons/fa";
+import { FaBuilding, FaFileInvoice, FaRegIdCard, FaMapMarkerAlt, FaUniversity, FaCheckCircle, FaArrowLeft, FaClock, FaSync, FaHourglassHalf } from "react-icons/fa";
 import "./MerchantOnboardingModal.css";
 
 const MerchantOnboardingModal = () => {

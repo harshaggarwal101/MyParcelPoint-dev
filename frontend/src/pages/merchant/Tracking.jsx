@@ -2,28 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Sidebar from "../../components/Sidebar";
 import api from "../../services/api";
-import {
-  FaTruck,
-  FaBox,
-  FaCalendarAlt,
-  FaPhoneAlt,
-  FaUser,
-  FaCheckCircle,
-  FaClock,
-  FaMapMarkerAlt,
-  FaSearch,
-  FaTimes,
-  FaCopy,
-  FaShareAlt,
-  FaExternalLinkAlt,
-  FaExclamationTriangle,
-  FaShippingFast,
-  FaWarehouse,
-  FaWeightHanging,
-  FaMoneyBillWave,
-  FaShieldAlt,
-  FaInfoCircle,
-} from "react-icons/fa";
+import { FaTruck, FaBox, FaCalendarAlt, FaPhoneAlt, FaUser, FaCheckCircle, FaClock, FaMapMarkerAlt, FaSearch, FaTimes, FaCopy, FaExclamationTriangle, FaShippingFast, FaWarehouse, FaWeightHanging, FaMoneyBillWave, FaInfoCircle } from "react-icons/fa";
 import "./Tracking.css";
 
 const STEP_DEFINITIONS = [

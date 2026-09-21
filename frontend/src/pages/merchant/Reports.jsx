@@ -1,21 +1,7 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Sidebar from "../../components/Sidebar";
 import api from "../../services/api";
-import {
-  FaBox,
-  FaRupeeSign,
-  FaTruck,
-  FaWallet,
-  FaDownload,
-  FaSync,
-  FaExclamationTriangle,
-  FaCheckCircle,
-  FaClock,
-  FaUndoAlt,
-  FaCalendarAlt,
-  FaChartBar,
-  FaFileCsv,
-} from "react-icons/fa";
+import { FaBox, FaRupeeSign, FaTruck, FaWallet, FaSync, FaExclamationTriangle, FaCheckCircle, FaUndoAlt, FaCalendarAlt, FaChartBar, FaFileCsv } from "react-icons/fa";
 import "./Reports.css";
 
 const DATE_FILTERS = [

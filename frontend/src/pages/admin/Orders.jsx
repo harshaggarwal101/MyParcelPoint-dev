@@ -2,14 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AdminSidebar from "../../components/admin/AdminSidebar";
 import api from "../../services/api";
-import {
-  FaBox,
-  FaSearch,
-  FaEllipsisV,
-  FaEye,
-  FaTimesCircle,
-  FaTruck,
-} from "react-icons/fa";
+import { FaSearch, FaEllipsisV, FaEye, FaTimesCircle, FaTruck } from "react-icons/fa";
 import "./Orders.css"; 
 
 const Orders = () => {

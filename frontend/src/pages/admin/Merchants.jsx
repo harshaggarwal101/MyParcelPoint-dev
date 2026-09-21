@@ -2,20 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AdminSidebar from "../../components/admin/AdminSidebar";
 import api from "../../services/api";
-import {
-  FaStore,
-  FaUserCheck,
-  FaBan,
-  FaSearch,
-  FaClock,
-  FaEye,
-  FaTimes,
-  FaMoneyBillWave,
-  FaBox,
-  FaShoppingCart,
-  FaTags,
-  FaCheckCircle,
-} from "react-icons/fa";
+import { FaStore, FaUserCheck, FaBan, FaSearch, FaClock, FaEye, FaTimes, FaMoneyBillWave, FaBox, FaShoppingCart, FaTags } from "react-icons/fa";
 import "./Merchants.css"; 
 
 const Merchants = () => {

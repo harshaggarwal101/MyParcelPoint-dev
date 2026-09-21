@@ -19,7 +19,7 @@ const PublicRoute = ({ children }) => {
       if (role === "MERCHANT") return <Navigate to="/merchant/dashboard" />;
       if (role === "ADMIN") return <Navigate to="/admin/dashboard" />;
       if (role === "SUPER_ADMIN") return <Navigate to="/superadmin/dashboard" />;
-    } catch (error) {
+    } catch {
       // Invalid token — clear it and show public page
       localStorage.removeItem("token");
       localStorage.removeItem("user");

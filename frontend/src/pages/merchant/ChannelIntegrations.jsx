@@ -1,25 +1,7 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import Sidebar from "../../components/Sidebar";
 import api from "../../services/api";
-import {
-  FaStore,
-  FaPlus,
-  FaSync,
-  FaTrash,
-  FaCheckCircle,
-  FaExclamationCircle,
-  FaShoppingBag,
-  FaPlug,
-  FaKey,
-  FaGlobe,
-  FaToggleOn,
-  FaToggleOff,
-  FaSpinner,
-  FaTimes,
-  FaQuestionCircle,
-  FaShoppingCart,
-  FaBoxOpen,
-} from "react-icons/fa";
+import { FaStore, FaPlus, FaSync, FaTrash, FaCheckCircle, FaExclamationCircle, FaShoppingBag, FaPlug, FaGlobe, FaToggleOn, FaToggleOff, FaSpinner, FaTimes, FaShoppingCart, FaBoxOpen } from "react-icons/fa";
 import "./ChannelIntegrations.css";
 
 const CHANNEL_TYPES = [
@@ -152,7 +134,7 @@ const ChannelIntegrations = () => {
     try {
       const res = await api.patch(`/channels/${id}/toggle-sync`);
       setChannels(channels.map((c) => (c._id === id ? res.data.channel : c)));
-    } catch (err) {
+    } catch {
       alert("Failed to toggle auto-sync");
     }
   };
@@ -177,7 +159,7 @@ const ChannelIntegrations = () => {
       await api.delete(`/channels/${id}`);
       setChannels(channels.filter((c) => c._id !== id));
       alert("Store disconnected successfully");
-    } catch (err) {
+    } catch {
       alert("Failed to disconnect store");
     }
   };

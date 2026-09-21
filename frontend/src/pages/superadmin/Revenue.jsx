@@ -1,21 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import api from "../../services/api";
 import SuperAdminLayout from "./SuperAdminLayout";
-import {
-  FaRupeeSign,
-  FaChartLine,
-  FaMoneyBillWave,
-  FaUsers,
-  FaSync,
-  FaDownload,
-  FaSearch,
-  FaStore,
-  FaChevronLeft,
-  FaChevronRight,
-  FaExclamationTriangle,
-  FaCheckCircle,
-  FaTruck,
-} from "react-icons/fa";
+import { FaSync, FaDownload, FaSearch, FaChevronLeft, FaChevronRight, FaExclamationTriangle } from "react-icons/fa";
 import DateFilterBar from "../../components/DateFilterBar";
 import "./Revenue.css";
 

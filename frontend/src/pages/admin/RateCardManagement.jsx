@@ -1,32 +1,9 @@
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import api from "../../services/api";
 import AdminSidebar from "../../components/admin/AdminSidebar";
 import "./RateCardManagement.css";
-import {
-  FaTruck,
-  FaPlane,
-  FaCheckCircle,
-  FaExclamationTriangle,
-  FaSpinner,
-  FaInfoCircle,
-  FaBoxes,
-  FaMapMarkerAlt,
-  FaReceipt,
-  FaSlidersH,
-  FaEye,
-  FaShieldAlt,
-  FaArrowLeft,
-  FaSave,
-  FaUndo,
-  FaBuilding,
-  FaSearch,
-  FaEdit,
-  FaPlusCircle,
-  FaCalculator,
-  FaCoins,
-  FaExchangeAlt,
-} from "react-icons/fa";
+import { FaTruck, FaPlane, FaCheckCircle, FaExclamationTriangle, FaSpinner, FaInfoCircle, FaBoxes, FaMapMarkerAlt, FaReceipt, FaSlidersH, FaArrowLeft, FaSave, FaUndo, FaBuilding, FaSearch, FaEdit, FaPlusCircle, FaCalculator, FaExchangeAlt } from "react-icons/fa";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "../superadmin/RateCardManagement.css";

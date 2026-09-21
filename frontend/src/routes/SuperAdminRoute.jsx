@@ -26,7 +26,7 @@ const SuperAdminRoute = ({ children }) => {
     ) : (
       <Navigate to="/login" />
     );
-  } catch (error) {
+  } catch {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     return <Navigate to="/login" />;

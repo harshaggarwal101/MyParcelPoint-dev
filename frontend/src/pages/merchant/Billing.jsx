@@ -79,10 +79,11 @@ const Billing = () => {
       switch (dateFilter) {
         case "TODAY":
           return invDate >= today;
-        case "LAST_7_DAYS":
+        case "LAST_7_DAYS": {
           const sevenDaysAgo = new Date(today);
           sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
           return invDate >= sevenDaysAgo;
+        }
         case "THIS_MONTH":
           return invDate.getMonth() === now.getMonth() && 
                  invDate.getFullYear() === now.getFullYear();

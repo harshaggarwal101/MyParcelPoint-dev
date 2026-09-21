@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import Sidebar from "../../components/Sidebar";
 import api from "../../services/api";
-import { FaBox, FaTruck, FaArrowLeft, FaCheckCircle, FaShippingFast, FaWallet, FaRupeeSign, FaStar, FaSortAmountUp, FaShieldAlt, FaChevronDown, FaSearch } from "react-icons/fa";
+import { FaBox, FaTruck, FaArrowLeft, FaCheckCircle, FaShippingFast, FaStar, FaSortAmountUp, FaChevronDown, FaSearch } from "react-icons/fa";
 import "./CreateShipment.css"; 
 
 const CreateShipment = () => {
@@ -89,7 +89,7 @@ const CreateShipment = () => {
     try {
       const user = JSON.parse(localStorage.getItem("user") || "{}");
       return user?.id || user?.merchantId || user?._id || "me";
-    } catch (error) {
+    } catch {
       return "me";
     }
   };
@@ -155,7 +155,7 @@ const CreateShipment = () => {
       if (res.data.success && res.data.couriers && res.data.couriers.length > 0) {
         // Do not seed total: 0 placeholders if order is selected
       }
-    } catch (err) {
+    } catch {
       // Fallback silent handle
     }
   };
@@ -177,7 +177,7 @@ const CreateShipment = () => {
       if (activeW.length > 0) {
         setFormData((prev) => (prev.warehouseId ? prev : { ...prev, warehouseId: activeW[0]._id }));
       }
-    } catch (err) {
+    } catch {
       setWarehouses([]);
     }
   };
@@ -186,7 +186,7 @@ const CreateShipment = () => {
     try {
       const res = await api.get("/wallet");
       setWalletBalance(res.data.wallet?.balance || 0);
-    } catch (error) {
+    } catch {
       setWalletBalance(0);
     }
   };
@@ -208,14 +208,14 @@ const CreateShipment = () => {
           totalCharge: res.data.totalCharge || 0
         });
       } else {
-        useStaticPricing();
+        applyStaticPricing();
       }
-    } catch (error) {
-      useStaticPricing();
+    } catch {
+      applyStaticPricing();
     }
   };
 
-  const useStaticPricing = () => {
+  const applyStaticPricing = () => {
     const baseCharge = 45;
     const codCharge = currentOrder?.paymentMode === "COD" ? 30 : 0;
     const fuelCharge = 5;

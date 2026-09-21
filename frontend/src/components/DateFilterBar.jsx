@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { FaCalendarAlt, FaFilter } from "react-icons/fa";
+import { useState } from "react";
+import { FaCalendarAlt } from "react-icons/fa";
 import "./DateFilterBar.css";
 
 const PRESETS = [

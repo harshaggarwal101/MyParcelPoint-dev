@@ -36,7 +36,7 @@ jobs:
           npm run build
 
       - name: Compose file is valid
-        run: docker compose config -q
+        run: touch backend/.env && docker compose config -q
 
   deploy:
     needs: ci

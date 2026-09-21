@@ -987,10 +987,10 @@ const RateCardManagement = () => {
                 <p className="rcm-merchant-item-label">KYC Documents</p>
                 <div style={{ display: "flex", gap: "10px", marginTop: "6px", flexWrap: "wrap" }}>
                   {merchantInfo.kycDocuments?.gstCertificate ? (
-                    <a href={`http://localhost:5000${merchantInfo.kycDocuments.gstCertificate}`} target="_blank" rel="noopener noreferrer" style={{ padding: "6px 12px", background: "#eff6ff", color: "#2563eb", border: "1px solid #bfdbfe", borderRadius: "6px", fontSize: "12px", fontWeight: "600", textDecoration: "none" }}>📄 View GST Certificate</a>
+                    <a href={`${import.meta.env.VITE_API_URL || ""}${merchantInfo.kycDocuments.gstCertificate}`} target="_blank" rel="noopener noreferrer" style={{ padding: "6px 12px", background: "#eff6ff", color: "#2563eb", border: "1px solid #bfdbfe", borderRadius: "6px", fontSize: "12px", fontWeight: "600", textDecoration: "none" }}>📄 View GST Certificate</a>
                   ) : <span style={{ fontSize: "12px", color: "#94a3b8" }}>No GST Document</span>}
                   {merchantInfo.kycDocuments?.panCard ? (
-                    <a href={`http://localhost:5000${merchantInfo.kycDocuments.panCard}`} target="_blank" rel="noopener noreferrer" style={{ padding: "6px 12px", background: "#f0fdf4", color: "#16a34a", border: "1px solid #bbf7d0", borderRadius: "6px", fontSize: "12px", fontWeight: "600", textDecoration: "none" }}>🪪 View PAN Card Document</a>
+                    <a href={`${import.meta.env.VITE_API_URL || ""}${merchantInfo.kycDocuments.panCard}`} target="_blank" rel="noopener noreferrer" style={{ padding: "6px 12px", background: "#f0fdf4", color: "#16a34a", border: "1px solid #bbf7d0", borderRadius: "6px", fontSize: "12px", fontWeight: "600", textDecoration: "none" }}>🪪 View PAN Card Document</a>
                   ) : <span style={{ fontSize: "12px", color: "#94a3b8" }}>No PAN Document</span>}
                 </div>
               </div>

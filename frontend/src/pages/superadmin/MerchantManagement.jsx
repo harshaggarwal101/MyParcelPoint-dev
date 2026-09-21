@@ -719,7 +719,7 @@ const MerchantManagement = () => {
                       <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
                         {selectedMerchant?.merchant?.kycDocuments?.gstCertificate ? (
                           <a
-                            href={`http://localhost:5000${selectedMerchant.merchant.kycDocuments.gstCertificate}`}
+                            href={`${import.meta.env.VITE_API_URL || ""}${selectedMerchant.merchant.kycDocuments.gstCertificate}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             style={{
@@ -746,7 +746,7 @@ const MerchantManagement = () => {
 
                         {selectedMerchant?.merchant?.kycDocuments?.panCard ? (
                           <a
-                            href={`http://localhost:5000${selectedMerchant.merchant.kycDocuments.panCard}`}
+                            href={`${import.meta.env.VITE_API_URL || ""}${selectedMerchant.merchant.kycDocuments.panCard}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             style={{
@@ -773,7 +773,7 @@ const MerchantManagement = () => {
 
                         {selectedMerchant?.merchant?.kycDocuments?.aadhaarFront && (
                           <a
-                            href={`http://localhost:5000${selectedMerchant.merchant.kycDocuments.aadhaarFront}`}
+                            href={`${import.meta.env.VITE_API_URL || ""}${selectedMerchant.merchant.kycDocuments.aadhaarFront}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             style={{
@@ -796,7 +796,7 @@ const MerchantManagement = () => {
 
                         {selectedMerchant?.merchant?.kycDocuments?.aadhaarBack && (
                           <a
-                            href={`http://localhost:5000${selectedMerchant.merchant.kycDocuments.aadhaarBack}`}
+                            href={`${import.meta.env.VITE_API_URL || ""}${selectedMerchant.merchant.kycDocuments.aadhaarBack}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             style={{

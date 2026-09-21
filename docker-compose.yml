@@ -12,6 +12,12 @@ services:
     env_file:
       - ./backend/.env
 
+    environment:
+      NODE_ENV: production
+
+    volumes:
+      - uploads:/app/uploads
+
     expose:
       - "5000"
 
@@ -37,6 +43,9 @@ services:
     networks:
       - logitrack-network
 
+
+volumes:
+  uploads:
 
 networks:
   logitrack-network:

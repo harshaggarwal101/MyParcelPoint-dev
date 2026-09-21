@@ -1,0 +1,80 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-cd-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+
+      - name: Backend - install and syntax check
+        working-directory: backend
+        run: |
+          npm ci
+          git ls-files '*.js' | grep -v '^tests/' | xargs -n1 node --check
+
+      - name: Frontend - install and build
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+
+      - name: Compose file is valid
+        run: docker compose config -q
+
+  deploy:
+    needs: ci
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    env:
+      HOST: ${{ secrets.DEPLOY_HOST }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure SSH
+        env:
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+
+      # backend/.env lives only on the server and uploads live in a docker volume, so neither is synced
+      - name: Sync code
+        run: |
+          rsync -az --delete \
+            --exclude '.git/' --exclude '.github/' --exclude 'node_modules/' \
+            --exclude 'backend/.env' --exclude 'backend/uploads/' \
+            -e "ssh -i ~/.ssh/id_deploy" ./ "root@$HOST:/opt/logitrack/"
+
+      - name: Rebuild and restart
+        run: |
+          ssh -i ~/.ssh/id_deploy "root@$HOST" \
+            'cd /opt/logitrack && docker compose up -d --build && docker image prune -f'
+
+      - name: Health check
+        run: |
+          for i in 1 2 3 4 5 6; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' "http://$HOST/api/health-check-probe" || true)
+            [ "$code" = "404" ] && echo "backend up (JSON 404 from API)" && exit 0
+            sleep 5
+          done
+          echo "backend did not respond as expected (last code: $code)"; exit 1

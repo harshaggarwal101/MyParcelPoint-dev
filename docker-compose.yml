@@ -34,8 +34,8 @@ services:
 
     restart: unless-stopped
 
-    ports:
-      - "80:80"
+    expose:
+      - "80"
 
     depends_on:
       - backend
@@ -44,8 +44,33 @@ services:
       - logitrack-network
 
 
+  caddy:
+    image: caddy:2
+
+    container_name: logitrack-caddy
+
+    restart: unless-stopped
+
+    ports:
+      - "80:80"
+      - "443:443"
+
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+    depends_on:
+      - frontend
+
+    networks:
+      - logitrack-network
+
+
 volumes:
   uploads:
+  caddy_data:
+  caddy_config:
 
 networks:
   logitrack-network:

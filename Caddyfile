@@ -1,0 +1,9 @@
+# Caddy terminates TLS (auto Let's Encrypt) and forwards everything to the frontend nginx.
+myparcelpoint.com, www.myparcelpoint.com, api.myparcelpoint.com {
+	reverse_proxy frontend:80
+}
+
+# Plain HTTP by IP (used by the CI health check)
+:80 {
+	reverse_proxy frontend:80
+}

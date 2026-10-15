@@ -674,7 +674,15 @@ const getLogoBuffer = (logoPath) => {
 // ===============================
 // HELPER: Render Label V2 (Professional - Premium)
 // ===============================
-async function renderLabelV2(doc, shipment, settings = {}, labelWidth = null, labelHeight = null, x = 0, y = 0) {
+async function renderLabelV2(
+  doc,
+  shipment,
+  settings = {},
+  labelWidth = null,
+  labelHeight = null,
+  x = 0,
+  y = 0,
+) {
   const {
     logo = true,
     customerPhone = true,
@@ -691,91 +699,120 @@ async function renderLabelV2(doc, shipment, settings = {}, labelWidth = null, la
     doc.translate(x, y);
   }
 
-  const maxWidth = labelWidth || doc.page.width - (doc.page.margins?.left || 40) * 2;
-  const contentX = hasPosition ? 0 : (doc.page.margins?.left || 40);
-  const contentY = hasPosition ? 0 : (doc.page.margins?.top || 40);
-  
+  const maxWidth =
+    labelWidth || doc.page.width - (doc.page.margins?.left || 40) * 2;
+  const contentX = hasPosition ? 0 : doc.page.margins?.left || 40;
+  const contentY = hasPosition ? 0 : doc.page.margins?.top || 40;
+
   let currentY = contentY;
   const padding = 10;
   const fontSize = 7.5;
   const headerFontSize = 8.5;
-  const boldFont = 'Helvetica-Bold';
-  const regularFont = 'Helvetica';
-  
+  const boldFont = "Helvetica-Bold";
+  const regularFont = "Helvetica";
+
   const totalHeight = labelHeight || 420;
-  
-  // SECTION 1: SHIP TO + LOGO (18%)
-  const section1Height = totalHeight * 0.18;
+
   const section1Y = currentY;
-  
-  doc.strokeColor('#000000')
-     .lineWidth(0.3)
-     .rect(contentX, section1Y, maxWidth, totalHeight)
-     .stroke();
-  
+
+  // Draw the outer bounding box for the entire label
+  doc
+    .strokeColor("#000000")
+    .lineWidth(0.3)
+    .rect(contentX, section1Y, maxWidth, totalHeight)
+    .stroke();
+
   const rightWidth = 85;
   const rightX = contentX + maxWidth - rightWidth - 10;
   const leftWidth = maxWidth - rightWidth - padding - 15;
   const leftX = contentX + padding;
-  
-  doc.font(boldFont)
-     .fontSize(headerFontSize)
-     .fillColor('#000000')
-     .text('SHIP TO', leftX, section1Y + padding, {
-       width: leftWidth - padding,
-       align: 'left',
-     });
-  
+
+  // ==========================================
+  // PRE-CALCULATE TEXT POSITIONS TO DETERMINE SECTION 1 HEIGHT
+  // ==========================================
   const nameY = section1Y + padding + 16;
-  doc.font(boldFont)
-     .fontSize(9)
-     .fillColor('#000000')
-     .text(shipment.orderId?.customerName || 'N/A', leftX, nameY, {
-       width: leftWidth - padding,
-       align: 'left',
-     });
-  
   const phoneY = nameY + 15;
-  if (customerPhone && shipment.orderId?.customerPhone) {
-    doc.font(regularFont)
-       .fontSize(fontSize)
-       .fillColor('#000000')
-       .text(`Phone: ${shipment.orderId.customerPhone}`, leftX, phoneY, {
-         width: leftWidth - padding,
-         align: 'left',
-       });
-  }
-  
-  const addressY = phoneY + 13;
-  let addressText = shipment.orderId?.customerAddress || 'N/A';
+  const addressY =
+    customerPhone && shipment.orderId?.customerPhone ? phoneY + 13 : nameY + 13;
+
+  let addressText = shipment.orderId?.customerAddress || "N/A";
   if (shipment.orderId?.customerCity && shipment.orderId?.customerState) {
-    addressText = `${shipment.orderId?.customerAddress || ''}, ${shipment.orderId?.customerCity || ''}, ${shipment.orderId?.customerState || ''}`;
+    addressText = `${shipment.orderId?.customerAddress || ""}, ${shipment.orderId?.customerCity || ""}, ${shipment.orderId?.customerState || ""}`;
   }
-  
-  doc.font(regularFont)
-     .fontSize(7)
-     .fillColor('#333333')
-     .text(addressText, leftX, addressY, {
-       width: leftWidth - padding,
-       align: 'left',
-     });
-  
-  const pincodeY = addressY + 11;
-  let locationText = '';
-  if (shipment.orderId?.customerCity) locationText += shipment.orderId.customerCity;
-  if (shipment.orderId?.customerState) locationText += ` • ${shipment.orderId.customerState}`;
-  if (shipment.orderId?.customerPincode) locationText += ` • ${shipment.orderId.customerPincode}`;
-  
+
+  // Set the font before measuring
+  doc.font(regularFont).fontSize(7).fillColor("#333333");
+
+  const addressHeight = doc.heightOfString(addressText, {
+    width: leftWidth - padding,
+  });
+
+  const pincodeY = addressY + addressHeight + 2;
+
+  let locationText = "";
+  if (shipment.orderId?.customerCity)
+    locationText += shipment.orderId.customerCity;
+  if (shipment.orderId?.customerState)
+    locationText += ` • ${shipment.orderId.customerState}`;
+  if (shipment.orderId?.customerPincode)
+    locationText += ` • ${shipment.orderId.customerPincode}`;
+
+  const locationHeight = locationText
+    ? doc.heightOfString(locationText, { width: leftWidth - padding })
+    : 0;
+
+  // Calculate dynamic section height based on the text
+  const minSection1Height = pincodeY + locationHeight - section1Y + padding;
+  const section1Height = Math.max(totalHeight * 0.18, minSection1Height);
+
+  // ==========================================
+  // DRAW SECTION 1 CONTENT
+  // ==========================================
+  doc
+    .font(boldFont)
+    .fontSize(headerFontSize)
+    .fillColor("#000000")
+    .text("SHIP TO", leftX, section1Y + padding, {
+      width: leftWidth - padding,
+      align: "left",
+    });
+
+  doc
+    .font(boldFont)
+    .fontSize(9)
+    .fillColor("#000000")
+    .text(shipment.orderId?.customerName || "N/A", leftX, nameY, {
+      width: leftWidth - padding,
+      align: "left",
+    });
+
+  if (customerPhone && shipment.orderId?.customerPhone) {
+    doc
+      .font(regularFont)
+      .fontSize(fontSize)
+      .fillColor("#000000")
+      .text(`Phone: ${shipment.orderId.customerPhone}`, leftX, phoneY, {
+        width: leftWidth - padding,
+        align: "left",
+      });
+  }
+
+  doc
+    .font(regularFont)
+    .fontSize(7)
+    .fillColor("#333333")
+    .text(addressText, leftX, addressY, {
+      width: leftWidth - padding,
+      align: "left",
+    });
+
   if (locationText) {
-    doc.font(regularFont)
-       .fontSize(7)
-       .fillColor('#333333')
-       .text(locationText, leftX, pincodeY, {
-         width: leftWidth - padding,
-         align: 'left',
-       });
+    doc.text(locationText, leftX, pincodeY, {
+      width: leftWidth - padding,
+      align: "left",
+    });
   }
-  
+
   if (logo) {
     let logoImage = null;
     if (useMerchantLogo && shipment.merchantId?.logo) {
@@ -783,298 +820,375 @@ async function renderLabelV2(doc, shipment, settings = {}, labelWidth = null, la
     } else if (uploadedLogo) {
       logoImage = uploadedLogo;
     }
-    
+
     if (logoImage) {
       try {
         const logoX = rightX + 10;
         const logoY = section1Y + (section1Height - 40) / 2;
         doc.image(logoImage, logoX, logoY, {
           fit: [65, 40],
-          align: 'center',
-          valign: 'center',
+          align: "center",
+          valign: "center",
         });
       } catch (err) {
         logger.error("Logo rendering error", { error: err.message });
-        doc.strokeColor('#E0E0E0')
-           .lineWidth(0.5)
-           .rect(rightX + 10, section1Y + section1Height/2 - 15, rightWidth - 20, 30)
-           .stroke();
+        doc
+          .strokeColor("#E0E0E0")
+          .lineWidth(0.5)
+          .rect(
+            rightX + 10,
+            section1Y + section1Height / 2 - 15,
+            rightWidth - 20,
+            30,
+          )
+          .stroke();
       }
     }
   }
-  
+
   currentY = section1Y + section1Height;
-  doc.moveTo(contentX, currentY)
-     .lineTo(contentX + maxWidth, currentY)
-     .stroke();
-  
-  // SECTION 2: SHIPMENT INFO (LEFT) + BARCODE (RIGHT) - SWAPPED LAYOUT
+  doc
+    .moveTo(contentX, currentY)
+    .lineTo(contentX + maxWidth, currentY)
+    .stroke();
+
+  // ==========================================
+  // SECTION 2: SHIPMENT INFO (LEFT) + BARCODE (RIGHT)
+  // ==========================================
   const section2Height = totalHeight * 0.25;
   const section2Y = currentY;
-  
-  const dividerX = contentX + maxWidth * 0.52;
-  doc.moveTo(dividerX, section2Y)
-     .lineTo(dividerX, section2Y + section2Height)
-     .stroke();
-  
+
+  // FIX: Force to exactly 50% width to match Section 3
+  const dividerX = contentX + maxWidth * 0.5;
+
+  doc
+    .moveTo(dividerX, section2Y)
+    .lineTo(dividerX, section2Y + section2Height)
+    .stroke();
+
   // SHIPMENT INFO LEFT
   const infoX = contentX + padding;
-  const infoWidth = maxWidth * 0.52 - padding * 2;
+  const infoWidth = maxWidth * 0.5 - padding * 2; // Aligned to 50%
   const infoStartY = section2Y + padding + 5;
   const infoLineHeight = 16;
   const labelWidth_ = 50;
   const valueWidth = infoWidth - labelWidth_ - 5;
-  
-  doc.font(regularFont)
-     .fontSize(6.5)
-     .fillColor('#666666')
-     .text('Courier', infoX, infoStartY, { width: labelWidth_, align: 'left' });
-  
-  let courierName = shipment.courier || 'N/A';
+
+  doc
+    .font(regularFont)
+    .fontSize(6.5)
+    .fillColor("#666666")
+    .text("Courier", infoX, infoStartY, { width: labelWidth_, align: "left" });
+
+  let courierName = shipment.courier || "N/A";
   const courierAbbreviations = {
-    'Xpressbees': 'XBEE',
-    'Xpressbees Surface': 'XBEE',
-    'Delhivery': 'DLVRY',
-    'Blue Dart': 'BLDART',
-    'DTDC': 'DTDC',
-    'Amazon Shipping': 'AMZN',
-    'Flipkart': 'FLPK',
-    'Ecom Express': 'ECOM',
-    'Shadowfax': 'SHDW',
-    'Porter': 'PRTR',
+    Xpressbees: "XBEE",
+    "Xpressbees Surface": "XBEE",
+    Delhivery: "DLVRY",
+    "Blue Dart": "BLDART",
+    DTDC: "DTDC",
+    "Amazon Shipping": "AMZN",
+    Flipkart: "FLPK",
+    "Ecom Express": "ECOM",
+    Shadowfax: "SHDW",
+    Porter: "PRTR",
   };
-  
+
   for (const [key, short] of Object.entries(courierAbbreviations)) {
     if (courierName.includes(key)) {
       courierName = short;
       break;
     }
   }
-  
+
   if (courierName.length > 10) {
-    courierName = courierName.substring(0, 10) + '...';
+    courierName = courierName.substring(0, 10) + "...";
   }
-  
-  doc.font(boldFont)
-     .fontSize(7)
-     .fillColor('#000000')
-     .text(courierName, infoX + labelWidth_, infoStartY, { 
-       width: valueWidth, 
-       align: 'left',
-       ellipsis: true 
-     });
-  
+
+  doc
+    .font(boldFont)
+    .fontSize(7)
+    .fillColor("#000000")
+    .text(courierName, infoX + labelWidth_, infoStartY, {
+      width: valueWidth,
+      align: "left",
+      ellipsis: true,
+    });
+
   const awbY = infoStartY + infoLineHeight;
-  doc.font(regularFont)
-     .fontSize(6.5)
-     .fillColor('#666666')
-     .text('AWB', infoX, awbY, { width: labelWidth_, align: 'left' });
-  
-  let shortAwb = shipment.awb || 'N/A';
+  doc
+    .font(regularFont)
+    .fontSize(6.5)
+    .fillColor("#666666")
+    .text("AWB", infoX, awbY, { width: labelWidth_, align: "left" });
+
+  let shortAwb = shipment.awb || "N/A";
   if (shortAwb.length > 14) {
-    shortAwb = '...' + shortAwb.slice(-10);
+    shortAwb = "..." + shortAwb.slice(-10);
   }
-  
-  doc.font(boldFont)
-     .fontSize(7)
-     .fillColor('#000000')
-     .text(shortAwb, infoX + labelWidth_, awbY, { 
-       width: valueWidth, 
-       align: 'left',
-       lineBreak: false,
-     });
-  
+
+  doc
+    .font(boldFont)
+    .fontSize(7)
+    .fillColor("#000000")
+    .text(shortAwb, infoX + labelWidth_, awbY, {
+      width: valueWidth,
+      align: "left",
+      lineBreak: false,
+    });
+
   if (weight) {
     const weightY = awbY + infoLineHeight;
-    doc.font(regularFont)
-       .fontSize(6.5)
-       .fillColor('#666666')
-       .text('Weight', infoX, weightY, { width: labelWidth_, align: 'left' });
-    doc.font(boldFont)
-       .fontSize(7)
-       .fillColor('#000000')
-       .text(`${shipment.orderId?.weight || 0} Kg`, infoX + labelWidth_, weightY, { 
-         width: valueWidth, 
-         align: 'left' 
-       });
+    doc
+      .font(regularFont)
+      .fontSize(6.5)
+      .fillColor("#666666")
+      .text("Weight", infoX, weightY, { width: labelWidth_, align: "left" });
+    doc
+      .font(boldFont)
+      .fontSize(7)
+      .fillColor("#000000")
+      .text(
+        `${shipment.orderId?.weight || 0} Kg`,
+        infoX + labelWidth_,
+        weightY,
+        {
+          width: valueWidth,
+          align: "left",
+        },
+      );
   }
-  
+
   const paymentY = awbY + infoLineHeight * 2;
-  const paymentMode = shipment.orderId?.paymentMode || 'N/A';
-  const isCOD = paymentMode.toUpperCase() === 'COD';
-  
-  doc.font(regularFont)
-     .fontSize(6.5)
-     .fillColor('#666666')
-     .text('Payment', infoX, paymentY, { width: labelWidth_, align: 'left' });
-  
-  doc.font(boldFont)
-     .fontSize(7)
-     .fillColor('#000000')
-     .text(`${isCOD ? 'COD' : 'PREPAID'}${isCOD ? ` ₹${shipment.orderId?.amount || 0}` : ''}`, 
-       infoX + labelWidth_, paymentY, { 
-       width: valueWidth, 
-       align: 'left' 
-     });
-  
+  const paymentMode = shipment.orderId?.paymentMode || "N/A";
+  const isCOD = paymentMode.toUpperCase() === "COD";
+
+  doc
+    .font(regularFont)
+    .fontSize(6.5)
+    .fillColor("#666666")
+    .text("Payment", infoX, paymentY, { width: labelWidth_, align: "left" });
+
+  doc
+    .font(boldFont)
+    .fontSize(7)
+    .fillColor("#000000")
+    .text(
+      `${isCOD ? "COD" : "PREPAID"}${isCOD ? ` ₹${shipment.orderId?.amount || 0}` : ""}`,
+      infoX + labelWidth_,
+      paymentY,
+      {
+        width: valueWidth,
+        align: "left",
+      },
+    );
+
   // BARCODE RIGHT
-  const rightBarcodeWidth = maxWidth * 0.48 - padding * 2;
-  const barcodeCenterX = dividerX + (maxWidth * 0.48) / 2;
-  const barcodeWidth = Math.min(rightBarcodeWidth - 20, 170);
+  const rightBarcodeWidth = maxWidth * 0.5 - padding * 2; // Aligned to 50%
+  const barcodeCenterX = dividerX + (maxWidth * 0.5) / 2; // Aligned to 50%
+
+  const barcodeWidth = Math.min(rightBarcodeWidth - 20, 128);
   const barcodeHeight = section2Height - 35;
-  
-  let barcodeValue = shipment.awb || 'N/A';
-  
+
+  let barcodeValue = shipment.awb || "N/A";
+
   try {
     const barcodeBuffer = await bwipjs.toBuffer({
       bcid: "code128",
       text: barcodeValue,
       scale: 3,
-      height: 10,
+      height: 9,
       includetext: false,
     });
 
+    const renderedBarcodeHeight = Math.max(30, barcodeHeight - 30);
     const barcodeX = barcodeCenterX - barcodeWidth / 2;
     const barcodeY = section2Y + 8;
-    
+
     doc.image(barcodeBuffer, barcodeX, barcodeY, {
       width: barcodeWidth,
-      height: barcodeHeight - 15,
+      height: renderedBarcodeHeight,
     });
-    
+
     const awbTextY = section2Y + section2Height - 16;
     const awbTextWidth = maxWidth * 0.48 - padding * 2;
     const isThermal = maxWidth < 300;
     const awbFontSize = isThermal ? 6.5 : 8;
-    
-    doc.font(boldFont)
-       .fontSize(awbFontSize)
-       .fillColor('#000000')
-       .text(barcodeValue, dividerX + padding, awbTextY, {
-         width: awbTextWidth,
-         align: 'center',
-         lineBreak: false,
-       });
+
+    doc
+      .font(boldFont)
+      .fontSize(awbFontSize)
+      .fillColor("#000000")
+      .text(barcodeValue, dividerX + padding, awbTextY, {
+        width: awbTextWidth,
+        align: "center",
+        lineBreak: false,
+      });
   } catch (err) {
     logger.error("Barcode generation error", { error: err.message });
-    doc.font(boldFont)
-       .fontSize(10)
-       .fillColor('#000000')
-       .text(barcodeValue, dividerX + padding, section2Y + section2Height/2 - 6, {
-         width: maxWidth * 0.48 - padding * 2,
-         align: 'center',
-       });
+    doc
+      .font(boldFont)
+      .fontSize(10)
+      .fillColor("#000000")
+      .text(
+        barcodeValue,
+        dividerX + padding,
+        section2Y + section2Height / 2 - 6,
+        {
+          width: rightBarcodeWidth,
+          align: "center",
+        },
+      );
   }
-  
+
   currentY = section2Y + section2Height;
-  doc.moveTo(contentX, currentY)
-     .lineTo(contentX + maxWidth, currentY)
-     .stroke();  // SECTION 3: SHIP FROM + ORDER DETAILS (Dynamic height to prevent text overflow)
+  doc
+    .moveTo(contentX, currentY)
+    .lineTo(contentX + maxWidth, currentY)
+    .stroke();
+
+  // ==========================================
+  // SECTION 3: SHIP FROM + ORDER DETAILS
+  // ==========================================
   const section3Y = currentY;
   const leftFromX = contentX + padding;
-  const leftFromWidth = maxWidth / 2 - padding * 2;
-  
-  doc.font(boldFont)
-     .fontSize(headerFontSize)
-     .fillColor('#000000')
-     .text('SHIP FROM', leftFromX, section3Y + padding, {
-       width: leftFromWidth,
-       align: 'left',
-     });
-   
+  const leftFromWidth = maxWidth * 0.5 - padding * 2;
+
+  doc
+    .font(boldFont)
+    .fontSize(headerFontSize)
+    .fillColor("#000000")
+    .text("SHIP FROM", leftFromX, section3Y + padding, {
+      width: leftFromWidth,
+      align: "left",
+    });
+
   const companyY = section3Y + padding + 14;
-  doc.font(boldFont)
-     .fontSize(7.5)
-     .fillColor('#000000')
-     .text(shipment.merchantId?.companyName || 'MyParcelPoint', leftFromX, companyY, {
-       width: leftFromWidth,
-       align: 'left',
-     });
-   
+  doc
+    .font(boldFont)
+    .fontSize(7.5)
+    .fillColor("#000000")
+    .text(
+      shipment.merchantId?.companyName || "MyParcelPoint",
+      leftFromX,
+      companyY,
+      {
+        width: leftFromWidth,
+        align: "left",
+      },
+    );
+
   const pickup = shipment.pickupAddress || {};
   let currentFromY = companyY + 11;
 
-  doc.font(regularFont)
-     .fontSize(6.5)
-     .fillColor('#333333');
+  doc.font(regularFont).fontSize(6.5).fillColor("#333333");
 
   if (pickup.warehouseName) {
-    doc.text(pickup.warehouseName, leftFromX, currentFromY, { width: leftFromWidth, height: 10, lineBreak: false });
+    doc.text(pickup.warehouseName, leftFromX, currentFromY, {
+      width: leftFromWidth,
+      height: 10,
+      lineBreak: false,
+    });
     currentFromY += 9.5;
   }
 
-  const addrStr = `${pickup.addressLine1 || ""} ${pickup.addressLine2 || ""}`.trim();
+  const addrStr =
+    `${pickup.addressLine1 || ""} ${pickup.addressLine2 || ""}`.trim();
   if (addrStr) {
-    doc.text(addrStr, leftFromX, currentFromY, { width: leftFromWidth, height: 10, lineBreak: false });
+    doc.text(addrStr, leftFromX, currentFromY, {
+      width: leftFromWidth,
+      height: 10,
+      lineBreak: false,
+    });
     currentFromY += 9.5;
   }
 
-  const cityStr = `${pickup.city || ""}, ${pickup.state || ""} - ${pickup.pincode || ""}`.trim();
+  const cityStr =
+    `${pickup.city || ""}, ${pickup.state || ""} - ${pickup.pincode || ""}`.trim();
   if (cityStr && cityStr !== "-") {
-    doc.text(cityStr, leftFromX, currentFromY, { width: leftFromWidth, height: 10, lineBreak: false });
+    doc.text(cityStr, leftFromX, currentFromY, {
+      width: leftFromWidth,
+      height: 10,
+      lineBreak: false,
+    });
     currentFromY += 9.5;
   }
 
   const contactList = [];
-  if (pickup.contactPerson) contactList.push(`Contact: ${pickup.contactPerson}`);
+  if (pickup.contactPerson)
+    contactList.push(`Contact: ${pickup.contactPerson}`);
   if (pickup.phone) contactList.push(`Phone: ${pickup.phone}`);
-  
+
   if (contactList.length > 0) {
-    doc.text(contactList.join(' | '), leftFromX, currentFromY, { width: leftFromWidth, height: 10, lineBreak: false });
+    doc.text(contactList.join(" | "), leftFromX, currentFromY, {
+      width: leftFromWidth,
+      height: 10,
+      lineBreak: false,
+    });
     currentFromY += 9.5;
   }
 
   if (shipment.merchantId?.gst) {
-    doc.text(`GST: ${shipment.merchantId.gst}`, leftFromX, currentFromY, { width: leftFromWidth, height: 10, lineBreak: false });
+    doc.text(`GST: ${shipment.merchantId.gst}`, leftFromX, currentFromY, {
+      width: leftFromWidth,
+      height: 10,
+      lineBreak: false,
+    });
     currentFromY += 9.5;
   }
-  
-  const rightOrderX = contentX + maxWidth / 2 + padding;
-  const rightOrderWidth = maxWidth / 2 - padding * 2;
-  
-  doc.font(boldFont)
-     .fontSize(headerFontSize)
-     .fillColor('#000000')
-     .text('ORDER DETAILS', rightOrderX, section3Y + padding, {
-       width: rightOrderWidth,
-       align: 'left',
-     });
-   
+
+  const rightOrderX = contentX + maxWidth * 0.5 + padding;
+  const rightOrderWidth = maxWidth * 0.5 - padding * 2;
+
+  doc
+    .font(boldFont)
+    .fontSize(headerFontSize)
+    .fillColor("#000000")
+    .text("ORDER DETAILS", rightOrderX, section3Y + padding, {
+      width: rightOrderWidth,
+      align: "left",
+    });
+
   const orderNumY = section3Y + padding + 14;
-  let orderNumber = shipment.orderId?.orderNumber || shipment.orderId?._id?.toString()?.slice(-6) || 'N/A';
-  
+  let orderNumber =
+    shipment.orderId?.orderNumber ||
+    shipment.orderId?._id?.toString()?.slice(-6) ||
+    "N/A";
+
   if (orderNumber.length > 14) {
-    orderNumber = '...' + orderNumber.slice(-12);
+    orderNumber = "..." + orderNumber.slice(-12);
   }
-  
-  doc.font(regularFont)
-     .fontSize(6.5)
-     .fillColor('#666666')
-     .text('Order No', rightOrderX, orderNumY, { width: 55, align: 'left' });
-  
-  const isThermal = maxWidth < 300;
-  const orderFontSize = isThermal ? 6.5 : 8;
-  
-  doc.font(boldFont)
-     .fontSize(orderFontSize)
-     .fillColor('#000000')
-     .text(orderNumber, rightOrderX + 55, orderNumY, { 
-       width: rightOrderWidth - 55, 
-       align: 'left',
-       lineBreak: false
-     });
-  
+
+  doc
+    .font(regularFont)
+    .fontSize(6.5)
+    .fillColor("#666666")
+    .text("Order No", rightOrderX, orderNumY, { width: 55, align: "left" });
+
+  const isThermalOrder = maxWidth < 300;
+  const orderFontSize = isThermalOrder ? 6.5 : 8;
+
+  doc
+    .font(boldFont)
+    .fontSize(orderFontSize)
+    .fillColor("#000000")
+    .text(orderNumber, rightOrderX + 55, orderNumY, {
+      width: rightOrderWidth - 55,
+      align: "left",
+      lineBreak: false,
+    });
+
   const barcodeOrderY = orderNumY + 16;
   if (orderNumber) {
     try {
       const smallBarcode = await bwipjs.toBuffer({
         bcid: "code128",
-        text: orderNumber.replace('...', ''),
+        text: orderNumber.replace("...", ""),
         scale: 2.5,
         height: 8,
         includetext: false,
       });
-      
+
       const barcodeX = rightOrderX + 10;
       const barcodeWidthSmall = Math.min(rightOrderWidth - 40, 130);
       doc.image(smallBarcode, barcodeX, barcodeOrderY, {
@@ -1085,140 +1199,159 @@ async function renderLabelV2(doc, shipment, settings = {}, labelWidth = null, la
       logger.error("Order barcode error", { error: err.message });
     }
   }
-  
+
   const paymentStatusY = barcodeOrderY + 23;
-  doc.font(boldFont)
-     .fontSize(9)
-     .fillColor('#000000')
-     .text(isCOD ? 'COD' : 'PREPAID', rightOrderX, paymentStatusY, {
-       width: rightOrderWidth,
-       align: 'left',
-     });
+  doc
+    .font(boldFont)
+    .fontSize(9)
+    .fillColor("#000000")
+    .text(isCOD ? "COD" : "PREPAID", rightOrderX, paymentStatusY, {
+      width: rightOrderWidth,
+      align: "left",
+    });
 
-  const section3Height = Math.max(totalHeight * 0.20, currentFromY - section3Y + padding);
+  const section3Height = Math.max(
+    totalHeight * 0.2,
+    currentFromY - section3Y + padding,
+  );
+  const dividerX3 = contentX + maxWidth * 0.5;
+  doc
+    .moveTo(dividerX3, section3Y)
+    .lineTo(dividerX3, section3Y + section3Height)
+    .stroke();
 
-  const dividerX3 = contentX + maxWidth / 2;
-  doc.moveTo(dividerX3, section3Y)
-     .lineTo(dividerX3, section3Y + section3Height)
-     .stroke();
-  
   currentY = section3Y + section3Height;
-  doc.moveTo(contentX, currentY)
-     .lineTo(contentX + maxWidth, currentY)
-     .stroke();
-  
-  // SECTION 4: ITEM DETAILS - FIXED AMOUNT OVERFLOW
+  doc
+    .moveTo(contentX, currentY)
+    .lineTo(contentX + maxWidth, currentY)
+    .stroke();
+
+  // ==========================================
+  // SECTION 4: ITEM DETAILS
+  // ==========================================
   const section4Height = totalHeight * 0.12;
   const section4Y = currentY;
-  
-  doc.font(boldFont)
-     .fontSize(headerFontSize)
-     .fillColor('#000000')
-     .text('ITEM DETAILS', contentX + padding, section4Y + padding, {
-       width: maxWidth - padding * 2,
-       align: 'left',
-     });
-  
+
+  doc
+    .font(boldFont)
+    .fontSize(headerFontSize)
+    .fillColor("#000000")
+    .text("ITEM DETAILS", contentX + padding, section4Y + padding, {
+      width: maxWidth - padding * 2,
+      align: "left",
+    });
+
   const tableY = section4Y + padding + 16;
-  
-  // Fixed column widths to prevent amount overflow
+
   const startX = contentX + padding;
   const totalWidth = maxWidth - padding * 2;
   const descCol = totalWidth * 0.58;
   const qtyCol = totalWidth * 0.12;
-  const amountCol = totalWidth * 0.30;
-  
-  doc.font(boldFont)
-     .fontSize(7)
-     .fillColor('#000000')
-     .text('Description', startX, tableY, { width: descCol - 5, align: 'left' })
-     .text('Qty', startX + descCol, tableY, { width: qtyCol, align: 'center' })
-     .text('Amount', startX + descCol + qtyCol, tableY, { width: amountCol - 5, align: 'right' });
-  
-  doc.strokeColor('#CCCCCC')
-     .lineWidth(0.3)
-     .moveTo(startX, tableY + 12)
-     .lineTo(startX + descCol + qtyCol + amountCol, tableY + 12)
-     .stroke();
-  
+  const amountCol = totalWidth * 0.3;
+
+  doc
+    .font(boldFont)
+    .fontSize(7)
+    .fillColor("#000000")
+    .text("Description", startX, tableY, { width: descCol - 5, align: "left" })
+    .text("Qty", startX + descCol, tableY, { width: qtyCol, align: "center" })
+    .text("Amount", startX + descCol + qtyCol, tableY, {
+      width: amountCol - 5,
+      align: "right",
+    });
+
+  doc
+    .strokeColor("#CCCCCC")
+    .lineWidth(0.3)
+    .moveTo(startX, tableY + 12)
+    .lineTo(startX + descCol + qtyCol + amountCol, tableY + 12)
+    .stroke();
+
   const items = shipment.orderId?.items || [];
   const itemY = tableY + 16;
-  
+
   if (items.length > 0) {
     const item = items[0];
-    const desc = item.name || item.productName || item.sku || 'Product';
-    const descDisplay = desc.length > 28 ? desc.substring(0, 28) + '...' : desc;
+    const desc = item.name || item.productName || item.sku || "Product";
+    const descDisplay = desc.length > 28 ? desc.substring(0, 28) + "..." : desc;
     const totalAmount = (item.price || item.amount || 0) * (item.quantity || 1);
-    
-    doc.font(regularFont)
-       .fontSize(7.5)
-       .fillColor('#000000')
-       .text(descDisplay, startX + 4, itemY, { 
-         width: descCol - 10, 
-         align: 'left' 
-       })
-       .text((item.quantity || 1).toString(), startX + descCol, itemY, { 
-         width: qtyCol, 
-         align: 'center' 
-       })
-       .text(`₹${totalAmount}`, startX + descCol + qtyCol, itemY, { 
-         width: amountCol - 6, 
-         align: 'right' 
-       });
-    
+
+    doc
+      .font(regularFont)
+      .fontSize(7.5)
+      .fillColor("#000000")
+      .text(descDisplay, startX + 4, itemY, {
+        width: descCol - 10,
+        align: "left",
+      })
+      .text((item.quantity || 1).toString(), startX + descCol, itemY, {
+        width: qtyCol,
+        align: "center",
+      })
+      .text(`₹${totalAmount}`, startX + descCol + qtyCol, itemY, {
+        width: amountCol - 6,
+        align: "right",
+      });
+
     if (items.length > 1) {
-      doc.font(regularFont)
-         .fontSize(6)
-         .fillColor('#999999')
-         .text(`+ ${items.length - 1} more`, startX + descCol + 10, itemY + 14, { 
-           width: descCol - 20, 
-           align: 'left' 
-         });
+      doc
+        .font(regularFont)
+        .fontSize(6)
+        .fillColor("#999999")
+        .text(`+ ${items.length - 1} more`, startX + descCol + 10, itemY + 14, {
+          width: descCol - 20,
+          align: "left",
+        });
     }
   } else {
     const totalAmount = shipment.orderId?.amount || 0;
-    doc.font(regularFont)
-       .fontSize(7.5)
-       .fillColor('#000000')
-       .text('Product', startX + 4, itemY, { 
-         width: descCol - 10, 
-         align: 'left' 
-       })
-       .text('1', startX + descCol, itemY, { 
-         width: qtyCol, 
-         align: 'center' 
-       })
-       .text(`₹${totalAmount}`, startX + descCol + qtyCol, itemY, { 
-         width: amountCol - 6, 
-         align: 'right' 
-       });
+    doc
+      .font(regularFont)
+      .fontSize(7.5)
+      .fillColor("#000000")
+      .text("Product", startX + 4, itemY, {
+        width: descCol - 10,
+        align: "left",
+      })
+      .text("1", startX + descCol, itemY, {
+        width: qtyCol,
+        align: "center",
+      })
+      .text(`₹${totalAmount}`, startX + descCol + qtyCol, itemY, {
+        width: amountCol - 6,
+        align: "right",
+      });
   }
-  
+
   currentY = section4Y + section4Height;
-  doc.moveTo(contentX, currentY)
-     .lineTo(contentX + maxWidth, currentY)
-     .stroke();
-  
+  doc
+    .moveTo(contentX, currentY)
+    .lineTo(contentX + maxWidth, currentY)
+    .stroke();
+
+  // ==========================================
   // SECTION 5: QR CODE + TERMS (10%)
-  const section5Height = totalHeight * 0.10;
+  // ==========================================
+  const section5Height = totalHeight * 0.1;
   const section5Y = currentY;
-  
+
   const dividerX5 = contentX + maxWidth * 0.25;
-  doc.moveTo(dividerX5, section5Y)
-     .lineTo(dividerX5, section5Y + section5Height)
-     .stroke();
-  
+  doc
+    .moveTo(dividerX5, section5Y)
+    .lineTo(dividerX5, section5Y + section5Height)
+    .stroke();
+
   const qrLeftX = contentX + padding;
   const qrWidth = maxWidth * 0.25 - padding * 2;
-  
+
   if (qrCode) {
     try {
       const qrSize = Math.min(38, section5Height - 16);
       const qrX = qrLeftX + (qrWidth - qrSize) / 2;
       const qrY = section5Y + (section5Height - qrSize) / 2;
-      
+
       const qrBuffer = await QRCode.toBuffer(shipment.awb, {
-        errorCorrectionLevel: 'H',
+        errorCorrectionLevel: "H",
         margin: 1,
         scale: 5,
       });
@@ -1231,26 +1364,21 @@ async function renderLabelV2(doc, shipment, settings = {}, labelWidth = null, la
       logger.error("QR generation error", { error: err.message });
     }
   }
-  
+
   const termsX = dividerX5 + 18;
   const termsWidth = maxWidth * 0.75 - padding * 2 - 8;
-  
-  doc.font(regularFont)
-     .fontSize(7)
-     .fillColor('#555555');
-  
+
+  doc.font(regularFont).fontSize(7).fillColor("#555555");
+
   const termsStartY = section5Y + padding + 8;
   const termsLineHeight = 16;
-  
-  const terms = [
-    'Handle With Care',
-    'Track using QR',
-  ];
-  
+
+  const terms = ["Handle With Care", "Track using QR"];
+
   terms.forEach((term, index) => {
-    doc.text(term, termsX, termsStartY + (index * termsLineHeight), {
+    doc.text(term, termsX, termsStartY + index * termsLineHeight, {
       width: termsWidth,
-      align: 'left',
+      align: "left",
     });
   });
 

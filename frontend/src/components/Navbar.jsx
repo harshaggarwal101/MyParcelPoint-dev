@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import "./Navbar.css";
+import logoImage from "../assets/logos/myParcelPoint.jpg"
 
 const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
@@ -32,15 +33,16 @@ const Navbar = () => {
   ];
 
   return (
-    <header
-      className={`navbar ${scrolled ? "scrolled" : ""}`}
-    >
+    <header className={`navbar ${scrolled ? "scrolled" : ""}`}>
       <div className="container">
-
         {/* Logo */}
         <div className="logo">
           <Link to="/">
-            <span className="logo-icon">📦</span>
+            <img
+              src={logoImage}
+              alt="MyParcelPoint Logo"
+              className="logo-icon"
+            />
 
             <span className="logo-text">
               MyParcel<span>Point</span>
@@ -50,9 +52,7 @@ const Navbar = () => {
 
         {/* Mobile Menu Button */}
         <div
-          className={`menu-toggle ${
-            menuOpen ? "active" : ""
-          }`}
+          className={`menu-toggle ${menuOpen ? "active" : ""}`}
           onClick={() => setMenuOpen(!menuOpen)}
         >
           <span></span>
@@ -61,22 +61,14 @@ const Navbar = () => {
         </div>
 
         {/* Navigation */}
-        <div
-          className={`nav-wrapper ${
-            menuOpen ? "active" : ""
-          }`}
-        >
+        <div className={`nav-wrapper ${menuOpen ? "active" : ""}`}>
           <nav>
             <ul>
               {navLinks.map((link) => (
                 <li key={link.path}>
                   <Link
                     to={link.path}
-                    className={
-                      location.pathname === link.path
-                        ? "active"
-                        : ""
-                    }
+                    className={location.pathname === link.path ? "active" : ""}
                     onClick={() => setMenuOpen(false)}
                   >
                     {link.name}
@@ -88,22 +80,15 @@ const Navbar = () => {
 
           {/* Right Buttons */}
           <div className="nav-actions">
-
             <Link to="/login">
-              <button className="login-btn">
-                Sign In
-              </button>
+              <button className="login-btn">Sign In</button>
             </Link>
 
             <Link to="/register">
-              <button className="register-btn">
-                Get Started
-              </button>
+              <button className="register-btn">Get Started</button>
             </Link>
-
           </div>
         </div>
-
       </div>
     </header>
   );

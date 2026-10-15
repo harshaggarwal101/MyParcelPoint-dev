@@ -27,6 +27,22 @@ const userSchema = new mongoose.Schema(
       trim: true,
     },
 
+    firebaseUid: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
+    emailVerified: {
+      type: Boolean,
+      default: false,
+    },
+
+    phoneVerified: {
+      type: Boolean,
+      default: false,
+    },
+
     logo: {
       type: String,
       default: "",
@@ -188,7 +204,7 @@ const userSchema = new mongoose.Schema(
         return ret;
       },
     },
-  }
+  },
 );
 
 module.exports = mongoose.models.User || mongoose.model("User", userSchema);

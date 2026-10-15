@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const rateLimit = require("express-rate-limit");
-const { registerUser, loginUser } = require("../controllers/authController");
+const { registerUser, loginUser,confirmEmail,syncEmailVerification} = require("../controllers/authController");
 
 // ====================================
 // RATE LIMITERS
@@ -35,12 +35,15 @@ const kycUpload = require("../middleware/kycUploadMiddleware");
 // ====================================
 router.post(
   "/register",
+  registerLimiter,
   kycUpload.fields([
     { name: "gstCertificate", maxCount: 1 },
     { name: "panCard", maxCount: 1 },
   ]),
   registerUser
 );
-router.post("/login", loginUser);
+router.post("/login",loginLimiter, loginUser);
+router.post("/confirm-email", confirmEmail);
+router.post("/sync-email-verification", loginLimiter, syncEmailVerification);
 
-module.exports = router;
+module.exports = router;

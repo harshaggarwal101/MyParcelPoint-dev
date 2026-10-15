@@ -41,18 +41,23 @@ app.use(
       if (!origin) return callback(null, true);
       const allowedOrigins = process.env.ALLOWED_ORIGINS
         ? process.env.ALLOWED_ORIGINS.split(",")
-        : ["http://localhost:5173", "http://localhost:5174", "http://localhost:3000"];
+        : [
+            "http://localhost:5173",
+            "http://localhost:5174",
+            "http://localhost:3000",
+          ];
       if (
         allowedOrigins.includes(origin) ||
         origin.endsWith(".vercel.app") ||
-        (process.env.NODE_ENV !== "production" && origin.startsWith("http://localhost:"))
+        (process.env.NODE_ENV !== "production" &&
+          origin.startsWith("http://localhost:"))
       ) {
         return callback(null, true);
       }
       return callback(new Error("Not allowed by CORS"));
     },
     credentials: true,
-  })
+  }),
 );
 
 // ====================================
@@ -69,7 +74,9 @@ app.use(helmet());
 // MIDDLEWARE
 // ====================================
 if (process.env.NODE_ENV !== "production") {
-  console.warn("⚠️  WARNING: NODE_ENV is not 'production' — verify this is intentional.");
+  console.warn(
+    "⚠️  WARNING: NODE_ENV is not 'production' — verify this is intentional.",
+  );
 }
 app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
 
@@ -79,7 +86,7 @@ app.use(
     verify: (req, res, buf) => {
       req.rawBody = buf;
     },
-  })
+  }),
 );
 app.use(express.json({ limit: "2mb" }));
 app.use(express.urlencoded({ limit: "2mb", extended: true }));

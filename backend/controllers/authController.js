@@ -1,6 +1,7 @@
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const { auth: firebaseAuth } = require("../config/firebaseAdmin");
 
 // Register User - Complete Version
 const registerUser = async (req, res) => {
@@ -29,7 +30,8 @@ const registerUser = async (req, res) => {
       branchName,
       upiId,
       role,
-      kycStatus
+      kycStatus,
+      firebaseIdToken,
     } = req.body;
 
     // Validation - Required Fields
@@ -64,6 +66,61 @@ const registerUser = async (req, res) => {
         message: "Password must be at least 6 characters long"
       });
     }
+
+
+        
+
+    if (!firebaseIdToken) {
+      return res.status(400).json({
+        success: false,
+        message: "Firebase authentication is required.",
+      });
+    }
+
+    let decodedToken;
+
+    try {
+      decodedToken = await firebaseAuth.verifyIdToken(firebaseIdToken);
+    } catch (error) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid Firebase identity. Please try registering again.",
+      });
+    }
+
+    if (
+      !decodedToken.uid ||
+      !decodedToken.email ||
+      decodedToken.email.toLowerCase() !== email.trim().toLowerCase()
+    ) {
+      return res.status(401).json({
+        success: false,
+        message: "Firebase account does not match the submitted email.",
+      });
+    }
+
+
+
+    const digits = String(phone || "").replace(/\D/g, "");
+
+    const submittedPhoneE164 =
+      digits.length === 10
+        ? `+91${digits}`
+        : digits.length === 12 && digits.startsWith("91")
+          ? `+${digits}`
+          : "";
+
+    if (
+      !submittedPhoneE164 ||
+      decodedToken.phone_number !== submittedPhoneE164
+    ) {
+      return res.status(403).json({
+        success: false,
+        message:
+          "Please verify the submitted mobile number using Firebase OTP.",
+      });
+    }
+
 
     // Check existing user
     const existingUser = await User.findOne({
@@ -152,6 +209,9 @@ const registerUser = async (req, res) => {
         panCard: panDocPath,
         addressProof: "",
       },
+      firebaseUid: decodedToken.uid,
+      emailVerified: decodedToken.email_verified === true,
+      phoneVerified: decodedToken.phone_number === submittedPhoneE164,
     });
 
     // Response
@@ -240,6 +300,13 @@ const loginUser = async (req, res) => {
       return res.status(401).json({
         success: false,
         message: "Invalid Email/Mobile Number or Password",
+      });
+    }
+    if (user.emailVerified !== true) {
+      return res.status(403).json({
+        success: false,
+        message: "Please verify your email before logging in.",
+        needsEmailVerification: true,
       });
     }
 
@@ -381,10 +448,130 @@ const approveMerchant = async (req, res) => {
   }
 };
 
+const confirmEmail = async (req, res) => {
+  try {
+    const { firebaseIdToken } = req.body;
+
+    if (!firebaseIdToken) {
+      return res.status(400).json({
+        success: false,
+        message: "Firebase authentication is required.",
+      });
+    }
+
+    let decodedToken;
+
+    try {
+      decodedToken = await firebaseAuth.verifyIdToken(firebaseIdToken);
+    } catch (error) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid Firebase authentication token.",
+      });
+    }
+
+    if (decodedToken.email_verified !== true || !decodedToken.email) {
+      return res.status(403).json({
+        success: false,
+        message: "Please verify your email first.",
+      });
+    }
+
+    const user = await User.findOne({
+      firebaseUid: decodedToken.uid,
+      email: decodedToken.email.toLowerCase(),
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "Matching application account not found.",
+      });
+    }
+
+    user.emailVerified = true;
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Email verified successfully.",
+    });
+  } catch (error) {
+    console.error("Confirm email error:", error.message);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to confirm email verification.",
+    });
+  }
+};
+
+
+const syncEmailVerification = async (req, res) => {
+  try {
+    const firebaseUid = String(req.body.firebaseUid || "").trim();
+
+    if (!firebaseUid) {
+      return res.status(400).json({
+        success: false,
+        message: "Firebase user ID is required.",
+      });
+    }
+
+    // Verify the actual Firebase account on the server.
+    const firebaseUser = await firebaseAuth.getUser(firebaseUid);
+
+    if (!firebaseUser.email || !firebaseUser.emailVerified) {
+      return res.status(403).json({
+        success: false,
+        message: "Please verify your email using the link first.",
+      });
+    }
+
+    // Find the matching MyParcelPoint account.
+    const email = firebaseUser.email.toLowerCase();
+
+    const user = await User.findOne({
+      firebaseUid: firebaseUser.uid,
+      email,
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "Matching application account not found.",
+      });
+    }
+
+    // Update MongoDB only after Firebase confirms verification.
+    user.emailVerified = true;
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Email verification synchronized successfully.",
+      phoneVerified: user.phoneVerified === true,
+    });
+  } catch (error) {
+    console.error(
+      "Sync email verification error:",
+      error.code || error.message,
+    );
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to synchronize email verification.",
+    });
+  }
+};
+
+
 module.exports = {
   registerUser,
   loginUser,
   getCurrentUser,
   getAllMerchants,
   approveMerchant,
+  confirmEmail,
+  syncEmailVerification,
 };

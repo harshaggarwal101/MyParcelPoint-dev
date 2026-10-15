@@ -3,6 +3,7 @@ import { useState } from "react";
 import api from "../../services/api";
 import { FaEnvelope, FaLock, FaEye, FaEyeSlash, FaTruck, FaShieldAlt, FaHeadset } from "react-icons/fa";
 import "./Auth.css";
+import logoImage from "../../assets/logos/myParcelPoint.jpg"
 
 const Login = () => {
   const navigate = useNavigate();
@@ -75,7 +76,8 @@ const Login = () => {
       alignItems: "center",
       justifyContent: "center",
       padding: "40px",
-      background: "linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 27, 75, 0.95))",
+      background:
+        "linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 27, 75, 0.95))",
       position: "relative",
     },
     brandContent: {
@@ -89,7 +91,10 @@ const Login = () => {
       marginBottom: "20px",
     },
     logoIcon: {
-      fontSize: "48px",
+      height: "40px",
+      width: "auto",
+      objectFit: "contain",
+      borderRadius: "6px",
     },
     brandTitle: {
       fontSize: "42px",
@@ -275,7 +280,7 @@ const Login = () => {
       <div className="auth-left-section" style={styles.leftSection}>
         <div style={styles.brandContent}>
           <div style={styles.brandLogo}>
-            <span style={styles.logoIcon}>📦</span>
+            <img src={logoImage} alt="Brand logo"  style={styles.logoIcon}/>
             <h1 style={styles.brandTitle}>MyParcel<span style={styles.brandSpan}>Point</span></h1>
           </div>
           <p style={styles.brandTagline}>India's Most Trusted Logistics Platform</p>

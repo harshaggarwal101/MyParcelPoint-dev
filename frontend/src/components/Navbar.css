@@ -59,7 +59,10 @@
 }
 
 .logo-icon {
-  font-size: 28px;
+  height: 40px;
+  width: auto;
+  object-fit: contain;
+  border-radius: 6px;
 }
 
 .logo-text {
@@ -343,7 +346,7 @@ nav ul li a.active::after {
   }
 
   .logo-icon {
-    font-size: 22px;
+    height: 32px;
   }
 
   nav ul li a {

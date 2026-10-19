@@ -35,17 +35,30 @@ const app = express();
 // ====================================
 // CORS
 // ====================================
+
+const defaultAllowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:5174",
+  "http://localhost:3000",
+  "https://myparcelpoint-dev-frontend.onrender.com",
+];
+
+const allowedOrigins = (
+  process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(",")
+    : defaultAllowedOrigins
+)
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
 app.use(
   cors({
     origin: function (origin, callback) {
-      if (!origin) return callback(null, true);
-      const allowedOrigins = process.env.ALLOWED_ORIGINS
-        ? process.env.ALLOWED_ORIGINS.split(",")
-        : [
-            "http://localhost:5173",
-            "http://localhost:5174",
-            "http://localhost:3000",
-          ];
+      // Allow requests without an Origin header, such as server-to-server calls.
+      if (!origin) {
+        return callback(null, true);
+      }
+
       if (
         allowedOrigins.includes(origin) ||
         origin.endsWith(".vercel.app") ||
@@ -54,10 +67,12 @@ app.use(
       ) {
         return callback(null, true);
       }
+
+      console.warn(`CORS blocked origin: ${origin}`);
       return callback(new Error("Not allowed by CORS"));
     },
     credentials: true,
-  }),
+  })
 );
 
 // ====================================

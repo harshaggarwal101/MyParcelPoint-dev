@@ -53,6 +53,11 @@ const userSchema = new mongoose.Schema(
       required: true,
     },
 
+    profilePicture: {
+      type: String,
+      default: "",
+    },
+
     // Business Details
     gstNumber: {
       type: String,

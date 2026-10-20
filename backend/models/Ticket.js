@@ -7,24 +7,20 @@ const ticketSchema = new mongoose.Schema(
       unique: true,
       required: true,
     },
-
     merchantId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
-
     shipmentId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Shipment",
       default: null,
     },
-
     awb: {
       type: String,
       default: "",
     },
-
     issueType: {
       type: String,
       enum: [
@@ -39,29 +35,25 @@ const ticketSchema = new mongoose.Schema(
       ],
       required: true,
     },
-
     description: {
       type: String,
       required: true,
     },
-
     priority: {
       type: String,
       enum: ["LOW", "MEDIUM", "HIGH"],
       default: "MEDIUM",
     },
-
     status: {
       type: String,
-      enum: [
-        "OPEN",
-        "IN_PROGRESS",
-        "RESOLVED",
-        "CLOSED",
-      ],
+      enum: ["OPEN", "IN_PROGRESS", "RESOLVED", "CLOSED"],
       default: "OPEN",
     },
-
+    // NEW: Attachments array to store image URLs/paths
+    attachments: {
+      type: [String],
+      default: [],
+    },
     adminRemarks: {
       type: String,
       default: "",
@@ -69,10 +61,8 @@ const ticketSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
-module.exports = mongoose.models.Ticket || mongoose.model(
-  "Ticket",
-  ticketSchema
-);
+module.exports =
+  mongoose.models.Ticket || mongoose.model("Ticket", ticketSchema);

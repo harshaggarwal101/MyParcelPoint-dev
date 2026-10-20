@@ -20,44 +20,57 @@ const Profile = () => {
     city: "",
     state: "",
     pincode: "",
+    profilePicture: "",
   });
+
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
 
   useEffect(() => {
     fetchProfile();
   }, []);
+
+  useEffect(() => {
+    return () => {
+      if (imagePreview) URL.revokeObjectURL(imagePreview);
+    };
+  }, [imagePreview]);
 
   const fetchProfile = async () => {
     try {
       const res = await api.get("/merchant/profile");
 
       setProfile({
-        companyName: res.data.merchant?.companyName || res.data.user?.companyName || "",
+        companyName:
+          res.data.merchant?.companyName || res.data.user?.companyName || "",
         name: res.data.user?.name || "",
         phone: res.data.user?.phone || "",
-        gstNumber: res.data.merchant?.gstNumber || res.data.user?.gstNumber || "",
-        panNumber: res.data.merchant?.panNumber || res.data.user?.panNumber || "",
-        bankAccount: res.data.merchant?.bankAccount || res.data.user?.accountNumber || "",
+        gstNumber:
+          res.data.merchant?.gstNumber || res.data.user?.gstNumber || "",
+        panNumber:
+          res.data.merchant?.panNumber || res.data.user?.panNumber || "",
+        bankAccount:
+          res.data.merchant?.bankAccount || res.data.user?.accountNumber || "",
         ifscCode: res.data.merchant?.ifscCode || res.data.user?.ifscCode || "",
         bankName: res.data.merchant?.bankName || res.data.user?.bankName || "",
         address: res.data.merchant?.address || res.data.user?.address || "",
         city: res.data.user?.city || "",
         state: res.data.user?.state || "",
         pincode: res.data.user?.pincode || "",
+        profilePicture:
+          res.data.merchant?.profilePicture ||
+          res.data.user?.profilePicture ||
+          "",
       });
 
-      // Sync user data in localStorage on initial load
       if (res.data.user) {
-        localStorage.setItem(
-          "user",
-          JSON.stringify(res.data.user)
-        );
+        localStorage.setItem("user", JSON.stringify(res.data.user));
         window.dispatchEvent(new Event("userUpdated"));
       }
     } catch (error) {
-
       alert(
         error?.response?.data?.message ||
-        "Failed to load profile. Please try again."
+          "Failed to load profile. Please try again.",
       );
       console.error("Fetch Profile Error:", error);
     }
@@ -70,48 +83,52 @@ const Profile = () => {
     });
   };
 
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
+
   const saveProfile = async () => {
     try {
       setLoading(true);
+      let res;
 
-      const res = await api.put(
-        "/merchant/profile",
-        profile
-      );
+      if (imageFile) {
+        const formData = new FormData();
+        Object.keys(profile).forEach((key) => {
+          formData.append(key, profile[key]);
+        });
+        formData.append("profilePicture", imageFile);
 
-      // Update localStorage and notify Sidebar
-      if (res.data.user) {
-        localStorage.setItem(
-          "user",
-          JSON.stringify(res.data.user)
-        );
-
-        window.dispatchEvent(
-          new Event("userUpdated")
-        );
+        res = await api.put("/merchant/profile", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+      } else {
+        res = await api.put("/merchant/profile", profile);
       }
 
-      // Fetch latest data after save
-      await fetchProfile();
+      if (res.data.user) {
+        localStorage.setItem("user", JSON.stringify(res.data.user));
+        window.dispatchEvent(new Event("userUpdated"));
+      }
 
-      alert(
-        res.data.message ||
-          "Profile Updated Successfully"
-      );
+      await fetchProfile();
+      alert(res.data?.message || "Profile Updated Successfully");
 
       setEditMode(false);
+      setImageFile(null);
+      setImagePreview(null);
     } catch (error) {
-      alert(
-        error?.response?.data?.message ||
-          "Profile Update Failed"
-      );
+      alert(error?.response?.data?.message || "Profile Update Failed");
       console.error("Save Profile Error:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  // Password Change States & Handlers
   const [passwordMode, setPasswordMode] = useState(false);
   const [passwordData, setPasswordData] = useState({
     oldPassword: "",
@@ -135,7 +152,9 @@ const Profile = () => {
     }
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
     if (!passwordRegex.test(passwordData.newPassword)) {
-      alert("Password must contain at least 8 characters, one uppercase letter, one lowercase letter, and one number.");
+      alert(
+        "Password must contain at least 8 characters, one uppercase letter, one lowercase letter, and one number.",
+      );
       return;
     }
     if (passwordData.newPassword !== passwordData.confirmPassword) {
@@ -151,7 +170,11 @@ const Profile = () => {
         confirmPassword: passwordData.confirmPassword,
       });
       alert(res.data.message || "Password changed successfully");
-      setPasswordData({ oldPassword: "", newPassword: "", confirmPassword: "" });
+      setPasswordData({
+        oldPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
       setPasswordMode(false);
     } catch (error) {
       alert(error?.response?.data?.message || "Failed to change password");
@@ -161,60 +184,85 @@ const Profile = () => {
     }
   };
 
-  // Async cancel with proper reset
   const handleCancel = async () => {
     setEditMode(false);
-    await fetchProfile(); // Reset to original data
+    setImageFile(null);
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    setImagePreview(null);
+    await fetchProfile();
   };
 
+  // ==========================================
+  // NEW: Dynamic Production & Local URL Logic
+  // ==========================================
+  const backendUrl =
+    import.meta.env.VITE_API_URL?.replace("/api", "") ||
+    "http://localhost:5001";
+
+  const displayImage =
+    imagePreview ||
+    (profile.profilePicture
+      ? profile.profilePicture.startsWith("http")
+        ? profile.profilePicture
+        : `${backendUrl}${profile.profilePicture}`
+      : null);
+
   return (
-    <div
-      style={{
-        display: "flex",
-        minHeight: "100vh",
-        background: "#f8fafc",
-      }}
-    >
+    <div style={{ display: "flex", minHeight: "100vh", background: "#f8fafc" }}>
       <Sidebar />
 
       <div className="profile-container">
         <h1>My Profile</h1>
 
-        <div
-          style={{
-            width: "100%",
-            maxWidth: "1400px",
-          }}
-        >
+        <div style={{ width: "100%", maxWidth: "1400px" }}>
           <div className="profile-card">
             <div className="profile-header">
-              <div className="avatar">
-                {profile.companyName
-                  ? profile.companyName
-                      .charAt(0)
-                      .toUpperCase()
-                  : "M"}
+              <div
+                className={`profile-avatar-wrapper ${editMode ? "editable" : ""}`}
+                onClick={() =>
+                  editMode &&
+                  document.getElementById("profile-pic-upload").click()
+                }
+              >
+                {displayImage ? (
+                  <img
+                    src={displayImage}
+                    alt="Profile"
+                    className="profile-avatar-img"
+                  />
+                ) : (
+                  <div className="profile-avatar">
+                    {profile.companyName
+                      ? profile.companyName.charAt(0).toUpperCase()
+                      : "M"}
+                  </div>
+                )}
+
+                {editMode && (
+                  <div className="profile-avatar-overlay">
+                    <span>Upload</span>
+                  </div>
+                )}
               </div>
 
-              <div>
-                <h2>
-                  {profile.companyName ||
-                    "Merchant Account"}
-                </h2>
+              <input
+                type="file"
+                id="profile-pic-upload"
+                style={{ display: "none" }}
+                accept="image/*"
+                onChange={handleImageChange}
+              />
 
-                <p>
-                  Manage your company information and
-                  business details
-                </p>
+              <div>
+                <h2>{profile.companyName || "Merchant Account"}</h2>
+                <p>Manage your company information and business details</p>
               </div>
             </div>
 
-            {/* Professional Stats Section */}
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns:
-                  "repeat(auto-fit,minmax(200px,1fr))",
+                gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))",
                 gap: "15px",
                 marginBottom: "25px",
               }}
@@ -223,17 +271,14 @@ const Profile = () => {
                 <h4>Company</h4>
                 <p>{profile.companyName || "Not Added"}</p>
               </div>
-
               <div className="profile-stat">
                 <h4>GST</h4>
                 <p>{profile.gstNumber || "Not Added"}</p>
               </div>
-
               <div className="profile-stat">
                 <h4>PAN</h4>
                 <p>{profile.panNumber || "Not Added"}</p>
               </div>
-
               <div className="profile-stat">
                 <h4>IFSC Code</h4>
                 <p>{profile.ifscCode || "Not Added"}</p>
@@ -250,7 +295,6 @@ const Profile = () => {
                 readOnly={!editMode}
                 className={!editMode ? "readonly-input" : ""}
               />
-
               <input
                 type="text"
                 name="name"
@@ -260,7 +304,6 @@ const Profile = () => {
                 readOnly={!editMode}
                 className={!editMode ? "readonly-input" : ""}
               />
-
               <input
                 type="text"
                 name="phone"
@@ -270,7 +313,6 @@ const Profile = () => {
                 readOnly={!editMode}
                 className={!editMode ? "readonly-input" : ""}
               />
-
               <input
                 type="text"
                 name="gstNumber"
@@ -280,7 +322,6 @@ const Profile = () => {
                 readOnly={!editMode}
                 className={!editMode ? "readonly-input" : ""}
               />
-
               <input
                 type="text"
                 name="panNumber"
@@ -290,7 +331,6 @@ const Profile = () => {
                 readOnly={!editMode}
                 className={!editMode ? "readonly-input" : ""}
               />
-
               <input
                 type="text"
                 name="bankAccount"
@@ -300,7 +340,6 @@ const Profile = () => {
                 readOnly={!editMode}
                 className={!editMode ? "readonly-input" : ""}
               />
-
               <input
                 type="text"
                 name="ifscCode"
@@ -310,7 +349,6 @@ const Profile = () => {
                 readOnly={!editMode}
                 className={!editMode ? "readonly-input" : ""}
               />
-
               <input
                 type="text"
                 name="bankName"
@@ -320,7 +358,6 @@ const Profile = () => {
                 readOnly={!editMode}
                 className={!editMode ? "readonly-input" : ""}
               />
-
               <input
                 type="text"
                 name="city"
@@ -330,7 +367,6 @@ const Profile = () => {
                 readOnly={!editMode}
                 className={!editMode ? "readonly-input" : ""}
               />
-
               <input
                 type="text"
                 name="state"
@@ -340,7 +376,6 @@ const Profile = () => {
                 readOnly={!editMode}
                 className={!editMode ? "readonly-input" : ""}
               />
-
               <input
                 type="text"
                 name="pincode"
@@ -350,7 +385,6 @@ const Profile = () => {
                 readOnly={!editMode}
                 className={!editMode ? "readonly-input" : ""}
               />
-
               <textarea
                 name="address"
                 placeholder="Address"
@@ -376,15 +410,12 @@ const Profile = () => {
                   >
                     {loading ? "Saving..." : "Save Changes"}
                   </button>
-
                   <button
                     type="button"
                     onClick={handleCancel}
                     disabled={loading}
                     className="cancel-button"
-                    style={{
-                      background: "#6b7280",
-                    }}
+                    style={{ background: "#6b7280" }}
                   >
                     Cancel
                   </button>
@@ -393,7 +424,6 @@ const Profile = () => {
             </div>
           </div>
 
-          {/* Password Change Section */}
           <div className="profile-card" style={{ marginTop: "20px" }}>
             <div className="profile-header">
               <div>
@@ -432,19 +462,30 @@ const Profile = () => {
               />
 
               {!passwordMode ? (
-                <button onClick={() => setPasswordMode(true)} className="edit-button">
+                <button
+                  onClick={() => setPasswordMode(true)}
+                  className="edit-button"
+                >
                   Change Password
                 </button>
               ) : (
                 <div style={{ display: "flex", gap: "10px" }}>
-                  <button onClick={savePassword} disabled={passwordLoading} className="save-button">
+                  <button
+                    onClick={savePassword}
+                    disabled={passwordLoading}
+                    className="save-button"
+                  >
                     {passwordLoading ? "Saving..." : "Update Password"}
                   </button>
                   <button
                     type="button"
                     onClick={() => {
                       setPasswordMode(false);
-                      setPasswordData({ oldPassword: "", newPassword: "", confirmPassword: "" });
+                      setPasswordData({
+                        oldPassword: "",
+                        newPassword: "",
+                        confirmPassword: "",
+                      });
                     }}
                     disabled={passwordLoading}
                     className="cancel-button"
@@ -459,7 +500,6 @@ const Profile = () => {
         </div>
       </div>
     </div>
-
   );
 };
 

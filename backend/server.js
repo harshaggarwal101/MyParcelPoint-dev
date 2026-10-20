@@ -72,7 +72,7 @@ app.use(
       return callback(new Error("Not allowed by CORS"));
     },
     credentials: true,
-  })
+  }),
 );
 
 // ====================================
@@ -106,8 +106,17 @@ app.use(
 app.use(express.json({ limit: "2mb" }));
 app.use(express.urlencoded({ limit: "2mb", extended: true }));
 
-// Serve Uploaded Files Statically (KYC Documents, Labels, etc.)
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+// Serve Uploaded Files Statically (KYC Documents, Labels, Profile Pics, Tickets, etc.)
+// Security headers attached strictly for this directory to bypass Helmet Same-Origin blocks
+app.use(
+  "/uploads",
+  express.static(path.join(__dirname, "uploads"), {
+    setHeaders: (res, path, stat) => {
+      res.set("Access-Control-Allow-Origin", "*");
+      res.set("Cross-Origin-Resource-Policy", "cross-origin");
+    },
+  }),
+);
 
 // Ensure database connection for requests (vital for Vercel serverless functions)
 app.use(async (req, res, next) => {

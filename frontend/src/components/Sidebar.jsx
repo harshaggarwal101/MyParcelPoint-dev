@@ -5,7 +5,7 @@ import {
   FaBox,
   FaClipboardList,
   FaTruck,
-  FaWarehouse, 
+  FaWarehouse,
   FaWallet,
   FaFileInvoice,
   FaChartBar,
@@ -22,7 +22,7 @@ import {
 } from "react-icons/fa";
 import "./Sidebar.css";
 import MerchantOnboardingModal from "./MerchantOnboardingModal";
-import logoImage from "../assets/logos/myParcelPoint.jpg"
+import logoImage from "../assets/logos/myParcelPoint.jpg";
 
 const Sidebar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -30,10 +30,28 @@ const Sidebar = () => {
   const navigate = useNavigate();
   const role = localStorage.getItem("role");
 
+  // NEW: Store user in React state to enable live updates
+  const [user, setUser] = useState(
+    JSON.parse(localStorage.getItem("user") || "{}"),
+  );
+
   // Close sidebar on route change (mobile)
   useEffect(() => {
     setIsOpen(false);
   }, [location.pathname]);
+
+  // NEW: Listen for the "userUpdated" event from Profile.jsx to instantly update the avatar
+  useEffect(() => {
+    const handleUserUpdate = () => {
+      setUser(JSON.parse(localStorage.getItem("user") || "{}"));
+    };
+
+    window.addEventListener("userUpdated", handleUserUpdate);
+
+    return () => {
+      window.removeEventListener("userUpdated", handleUserUpdate);
+    };
+  }, []);
 
   const toggleSidebar = () => {
     setIsOpen(!isOpen);
@@ -51,9 +69,13 @@ const Sidebar = () => {
     closeSidebar();
   };
 
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
-  const userName = user?.name || "Arjun Singh";
+  const userName = user?.name || "Merchant";
   const userInitial = userName.charAt(0).toUpperCase();
+
+  // NEW: Dynamic Base URL for profile pictures
+  const backendUrl =
+    import.meta.env.VITE_API_URL?.replace("/api", "") ||
+    "http://localhost:5001";
 
   return (
     <div className="merchant-scope">
@@ -100,7 +122,21 @@ const Sidebar = () => {
         </div>
 
         <div className="sidebar-profile">
-          <div className="avatar">{userInitial}</div>
+          {/* NEW: Render the image if it exists, otherwise fallback to the initial */}
+          {user?.profilePicture ? (
+            <img
+              src={
+                user.profilePicture.startsWith("http")
+                  ? user.profilePicture
+                  : `${backendUrl}${user.profilePicture}`
+              }
+              alt="Profile"
+              className="avatar"
+              style={{ objectFit: "cover" }}
+            />
+          ) : (
+            <div className="avatar">{userInitial}</div>
+          )}
           <div className="profile-info">
             <h4>{userName}</h4>
             <span>{role === "ADMIN" ? "Administrator" : "Merchant"}</span>

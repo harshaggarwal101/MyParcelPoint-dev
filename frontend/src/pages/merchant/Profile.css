@@ -35,7 +35,8 @@
   border-bottom: 1px solid #2a3a52;
 }
 
-.avatar {
+/* RENAMED TO .profile-avatar */
+.profile-avatar {
   width: 90px;
   height: 90px;
   min-width: 90px;
@@ -220,7 +221,8 @@
     min-height: 100px;
   }
 
-  .avatar {
+  /* RENAMED TO .profile-avatar */
+  .profile-avatar {
     width: 75px;
     height: 75px;
     min-width: 75px;
@@ -275,7 +277,8 @@
     font-size: 14px;
   }
 
-  .avatar {
+  /* RENAMED TO .profile-avatar */
+  .profile-avatar {
     width: 65px;
     height: 65px;
     min-width: 65px;
@@ -289,4 +292,55 @@
   .profile-container h1 {
     font-size: 22px;
   }
+}
+
+/* Add these to the bottom of Profile.css */
+
+.profile-avatar-wrapper {
+  position: relative;
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.profile-avatar-wrapper.editable {
+  cursor: pointer;
+}
+
+.profile-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.profile-avatar-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 600;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  border-radius: 50%;
+}
+
+.profile-avatar-wrapper.editable:hover .profile-avatar-overlay {
+  opacity: 1;
+}
+
+/* Ensure the inner avatar spans the whole wrapper */
+.profile-avatar-wrapper .profile-avatar {
+  width: 100%;
+  height: 100%;
+  box-shadow: none;
 }

@@ -8,7 +8,17 @@ const os = require("os");
 // ===============================
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, os.tmpdir());
+    // If the file is an image, save it to the /uploads folder so the frontend can view it
+    if (file.mimetype.startsWith("image/")) {
+      const uploadDir = path.join(__dirname, "../uploads/tickets");
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+      cb(null, uploadDir);
+    } else {
+      // If it is a CSV/Excel file, save it to the OS temp directory as usual
+      cb(null, os.tmpdir());
+    }
   },
 
   filename: (req, file, cb) => {
@@ -26,11 +36,24 @@ const storage = multer.diskStorage({
 // FILE FILTER
 // ===============================
 const fileFilter = (req, file, cb) => {
-  const allowedExts = [".csv", ".xlsx", ".xls"];
+  // Added image extensions and mimetypes alongside your existing ones
+  const allowedExts = [
+    ".csv",
+    ".xlsx",
+    ".xls",
+    ".jpg",
+    ".jpeg",
+    ".png",
+    ".webp",
+  ];
   const allowedMimes = [
     "text/csv",
     "application/vnd.ms-excel",
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "image/jpeg",
+    "image/jpg",
+    "image/png",
+    "image/webp",
   ];
 
   const ext = path.extname(file.originalname).toLowerCase();
@@ -38,7 +61,10 @@ const fileFilter = (req, file, cb) => {
   if (allowedExts.includes(ext) && allowedMimes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error("Only CSV and Excel files are allowed"), false);
+    cb(
+      new Error("Only Images (JPG/PNG), CSV, and Excel files are allowed"),
+      false,
+    );
   }
 };
 

@@ -33,6 +33,7 @@ const getProfile = async (req, res) => {
 };
 
 // Update Merchant Profile
+// Update Merchant Profile
 const updateProfile = async (req, res) => {
   try {
     const {
@@ -50,6 +51,14 @@ const updateProfile = async (req, res) => {
       pincode,
     } = req.body;
 
+    // NEW: Check if an image was uploaded via Multer
+    let profilePictureUrl = undefined;
+    if (req.file) {
+      // Because we previously routed all images to the tickets folder in uploadMiddleware,
+      // the profile picture will also land there. 
+      profilePictureUrl = `/uploads/tickets/${req.file.filename}`;
+    }
+
     // Production validation: Company Name is required
     if (
       companyName !== undefined &&
@@ -62,19 +71,24 @@ const updateProfile = async (req, res) => {
     }
 
     // Find or create merchant with single DB operation
+    const merchantUpdateData = {
+      companyName: companyName?.trim() ?? undefined,
+      gstNumber: gstNumber?.trim() ?? undefined,
+      panNumber: panNumber?.trim() ?? undefined,
+      bankAccount: bankAccount?.trim() ?? undefined,
+      ifscCode: ifscCode?.trim()?.toUpperCase() ?? undefined,
+      bankName: bankName?.trim() ?? undefined,
+      address: address?.trim() ?? undefined,
+    };
+
+    // NEW: Append profile picture if one was uploaded
+    if (profilePictureUrl) {
+      merchantUpdateData.profilePicture = profilePictureUrl;
+    }
+
     let merchant = await Merchant.findOneAndUpdate(
       { userId: req.user.id },
-      {
-        $set: {
-          companyName: companyName?.trim() ?? undefined,
-          gstNumber: gstNumber?.trim() ?? undefined,
-          panNumber: panNumber?.trim() ?? undefined,
-          bankAccount: bankAccount?.trim() ?? undefined,
-          ifscCode: ifscCode?.trim()?.toUpperCase() ?? undefined,
-          bankName: bankName?.trim() ?? undefined,
-          address: address?.trim() ?? undefined,
-        },
-      },
+      { $set: merchantUpdateData },
       {
         new: true,
         upsert: true,
@@ -85,41 +99,23 @@ const updateProfile = async (req, res) => {
     // Update user fields that are common
     const userUpdateData = {};
     
-    if (name !== undefined)
-      userUpdateData.name = name?.trim();
-
-    if (phone !== undefined)
-      userUpdateData.phone = phone?.trim();
-
-    if (companyName !== undefined) 
-      userUpdateData.companyName = companyName?.trim();
+    if (name !== undefined) userUpdateData.name = name?.trim();
+    if (phone !== undefined) userUpdateData.phone = phone?.trim();
+    if (companyName !== undefined) userUpdateData.companyName = companyName?.trim();
+    if (gstNumber !== undefined) userUpdateData.gstNumber = gstNumber?.trim();
+    if (panNumber !== undefined) userUpdateData.panNumber = panNumber?.trim();
+    if (bankAccount !== undefined) userUpdateData.accountNumber = bankAccount?.trim();
+    if (ifscCode !== undefined) userUpdateData.ifscCode = ifscCode?.trim()?.toUpperCase();
+    if (bankName !== undefined) userUpdateData.bankName = bankName?.trim();
+    if (address !== undefined) userUpdateData.address = address?.trim();
+    if (city !== undefined) userUpdateData.city = city?.trim();
+    if (state !== undefined) userUpdateData.state = state?.trim();
+    if (pincode !== undefined) userUpdateData.pincode = pincode?.trim();
     
-    if (gstNumber !== undefined) 
-      userUpdateData.gstNumber = gstNumber?.trim();
-    
-    if (panNumber !== undefined) 
-      userUpdateData.panNumber = panNumber?.trim();
-    
-    if (bankAccount !== undefined)
-      userUpdateData.accountNumber = bankAccount?.trim();
-
-    if (ifscCode !== undefined)
-      userUpdateData.ifscCode = ifscCode?.trim()?.toUpperCase();
-
-    if (bankName !== undefined)
-      userUpdateData.bankName = bankName?.trim();
-
-    if (address !== undefined) 
-      userUpdateData.address = address?.trim();
-
-    if (city !== undefined)
-      userUpdateData.city = city?.trim();
-
-    if (state !== undefined)
-      userUpdateData.state = state?.trim();
-
-    if (pincode !== undefined)
-      userUpdateData.pincode = pincode?.trim();
+    // NEW: Append profile picture to User document as well
+    if (profilePictureUrl) {
+      userUpdateData.profilePicture = profilePictureUrl;
+    }
 
     let user = null;
     if (Object.keys(userUpdateData).length > 0) {
@@ -139,7 +135,7 @@ const updateProfile = async (req, res) => {
       user: user,
     });
   } catch (error) {
-    // Handle duplicate key errors (if any field has unique index)
+    // Handle duplicate key errors
     if (error.code === 11000) {
       const field = Object.keys(error.keyPattern)[0];
       return res.status(409).json({
@@ -363,4 +359,4 @@ module.exports = {
   changePassword,
   uploadKYCDocument,
   uploadLogo,
-};
+};

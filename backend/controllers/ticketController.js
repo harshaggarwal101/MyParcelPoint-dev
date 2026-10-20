@@ -5,16 +5,15 @@ const Ticket = require("../models/Ticket");
 // =================================
 const createTicket = async (req, res) => {
   try {
-    const {
-      shipmentId,
-      awb,
-      issueType,
-      description,
-      priority,
-    } = req.body;
+    const { shipmentId, awb, issueType, description, priority } = req.body;
 
-    const ticketNumber =
-      "TKT" + Date.now();
+    const ticketNumber = "TKT" + Date.now();
+
+    // NEW: Map uploaded files to an array of URLs
+    let attachments = [];
+    if (req.files && req.files.length > 0) {
+      attachments = req.files.map((file) => `/uploads/tickets/${file.filename}`);
+    }
 
     const ticket = await Ticket.create({
       ticketNumber,
@@ -24,6 +23,7 @@ const createTicket = async (req, res) => {
       issueType,
       description,
       priority,
+      attachments, // NEW: Save attachments array to the ticket
     });
 
     res.status(201).json({
@@ -69,10 +69,7 @@ const getMyTickets = async (req, res) => {
 const getAllTickets = async (req, res) => {
   try {
     const tickets = await Ticket.find()
-      .populate(
-        "merchantId",
-        "name companyName email"
-      )
+      .populate("merchantId", "name companyName email")
       .populate("shipmentId")
       .sort({ createdAt: -1 });
 
@@ -94,13 +91,8 @@ const getAllTickets = async (req, res) => {
 // =================================
 const getTicketById = async (req, res) => {
   try {
-    const ticket = await Ticket.findById(
-      req.params.id
-    )
-      .populate(
-        "merchantId",
-        "name companyName email"
-      )
+    const ticket = await Ticket.findById(req.params.id)
+      .populate("merchantId", "name companyName email")
       .populate("shipmentId");
 
     if (!ticket) {
@@ -125,14 +117,9 @@ const getTicketById = async (req, res) => {
 // =================================
 // UPDATE TICKET STATUS (ADMIN)
 // =================================
-const updateTicketStatus = async (
-  req,
-  res
-) => {
+const updateTicketStatus = async (req, res) => {
   try {
-    const ticket = await Ticket.findById(
-      req.params.id
-    );
+    const ticket = await Ticket.findById(req.params.id);
 
     if (!ticket) {
       return res.status(404).json({
@@ -144,8 +131,7 @@ const updateTicketStatus = async (
     ticket.status = req.body.status;
 
     if (req.body.adminRemarks) {
-      ticket.adminRemarks =
-        req.body.adminRemarks;
+      ticket.adminRemarks = req.body.adminRemarks;
     }
 
     await ticket.save();

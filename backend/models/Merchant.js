@@ -50,13 +50,12 @@ const merchantSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    profilePicture: { type: String, default: "" },
   },
   {
     timestamps: true,
-  }
+  },
 );
 
-module.exports = mongoose.models.Merchant || mongoose.model(
-  "Merchant",
-  merchantSchema
-);
+module.exports =
+  mongoose.models.Merchant || mongoose.model("Merchant", merchantSchema);

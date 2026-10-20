@@ -3,6 +3,9 @@ const router = express.Router();
 
 const { authMiddleware } = require("../middleware/authMiddleware");
 
+// NEW: Import the smart upload middleware we created earlier
+const upload = require("../middleware/uploadMiddleware");
+
 const {
   getProfile,
   updateProfile,
@@ -14,25 +17,18 @@ const kycUpload = require("../middleware/kycUploadMiddleware");
 const logoUpload = require("../middleware/logoUploadMiddleware");
 
 // Get Profile
-router.get(
-  "/profile",
-  authMiddleware,
-  getProfile
-);
+router.get("/profile", authMiddleware, getProfile);
 
 // Update Profile
 router.put(
   "/profile",
   authMiddleware,
-  updateProfile
+  upload.single("profilePicture"), // NEW: Injected multer to catch the image
+  updateProfile,
 );
 
 // Change Password Route
-router.put(
-  "/change-password",
-  authMiddleware,
-  changePassword
-);
+router.put("/change-password", authMiddleware, changePassword);
 
 // KYC Upload Route
 router.post(
@@ -45,15 +41,10 @@ router.post(
     { name: "gstCertificate", maxCount: 1 },
     { name: "document", maxCount: 1 },
   ]),
-  uploadKYCDocument
+  uploadKYCDocument,
 );
 
 // Permanent Logo Upload Route
-router.post(
-  "/logo",
-  authMiddleware,
-  logoUpload.single("logo"),
-  uploadLogo
-);
+router.post("/logo", authMiddleware, logoUpload.single("logo"), uploadLogo);
 
-module.exports = router;
+module.exports = router;

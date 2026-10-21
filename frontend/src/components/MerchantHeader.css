@@ -243,3 +243,38 @@
 .btn-logout-session:hover {
   background: rgba(244, 63, 94, 0.15);
 }
+
+/* ============================================ */
+/* RESPONSIVE HAMBURGER MENU CLEARANCE        */
+/* ============================================ */
+
+/* Tablet and Mobile (768px and below) */
+@media (max-width: 768px) {
+  .merchant-top-header {
+    /* Clears the 44px button + 12px left offset */
+    padding-left: 64px; 
+    gap: 12px;
+  }
+}
+
+/* Small Mobile (480px and below) */
+@media (max-width: 480px) {
+  .merchant-top-header {
+    /* Clears the 40px button + 10px left offset */
+    padding-left: 58px; 
+  }
+  
+  /* Optional: Stack the header title and right-side controls on very small screens */
+  .merchant-header-left {
+    min-width: 100%;
+    margin-bottom: 8px;
+  }
+}
+
+/* Very Small (360px and below) */
+@media (max-width: 360px) {
+  .merchant-top-header {
+    /* Clears the 36px button + 8px left offset */
+    padding-left: 50px; 
+  }
+}

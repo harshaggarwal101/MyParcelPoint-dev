@@ -1,672 +1,715 @@
 .merchant-scope {
-/* Sidebar.css - Complete */
-
-/* ============================================ */
-/* SIDEBAR */
-/* ============================================ */
-
-.sidebar {
-  width: 280px;
-  height: 100vh;
-  position: fixed;
-  top: 0;
-  left: 0;
-  background-color: #090d18;
-  color: #f8fafc;
-  display: flex;
-  flex-direction: column;
-  border-right: 1px solid #162035;
-  font-family: 'Inter', sans-serif;
-  z-index: 2000;
-  transition: transform 0.3s ease-in-out, width 0.3s ease;
-  overflow: hidden;
-  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
-}
-
-/* ============================================ */
-/* HEADER */
-/* ============================================ */
-
-.sidebar-header {
-  padding: 28px 24px 20px 24px;
-  border-bottom: 1px solid #1e293b;
-  flex-shrink: 0;
-}
-
-.logo {
-  margin: 0;
-  font-size: 22px;
-  font-weight: 800;
-  color: #ffffff;
-  letter-spacing: -0.5px;
-}
-
-.logo-subtitle {
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  color: #f97316;
-  letter-spacing: 0.08em;
-  display: block;
-  margin-top: 4px;
-}
-
-/* ============================================ */
-/* PROFILE */
-/* ============================================ */
-
-.sidebar-profile {
-  padding: 16px 20px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background-color: #1e293b;
-  margin: 14px 16px;
-  border-radius: 12px;
-  flex-shrink: 0;
-}
-
-.avatar {
-  width: 42px;
-  height: 42px;
-  background: linear-gradient(135deg, #f97316, #ea580c);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 15px;
-  font-weight: 700;
-  color: white;
-  flex-shrink: 0;
-}
-
-.profile-info h4 {
-  margin: 0;
-  font-size: 13px;
-  font-weight: 600;
-  color: white;
-}
-
-.profile-info span {
-  font-size: 10px;
-  color: #94a3b8;
-  display: block;
-  margin-top: 2px;
-}
-
-/* ============================================ */
-/* MENU */
-/* ============================================ */
-
-.sidebar-menu {
-  list-style: none;
-  padding: 0 12px;
-  margin: 0;
-  flex-grow: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
-}
-
-.sidebar-menu li {
-  margin-bottom: 2px;
-}
-
-.sidebar-menu a {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 14px;
-  color: #94a3b8;
-  text-decoration: none;
-  font-size: 13px;
-  font-weight: 500;
-  border-radius: 10px;
-  transition: all 0.2s;
-  position: relative;
-  white-space: nowrap;
-}
-
-.sidebar-menu a svg {
-  font-size: 17px;
-  min-width: 20px;
-  flex-shrink: 0;
-}
-
-.sidebar-menu a:hover {
-  background-color: rgba(249, 115, 22, 0.1);
-  color: #f97316;
-}
-
-.sidebar-menu a.active {
-  background: linear-gradient(90deg, #f97316, #ea580c) !important;
-  color: white !important;
-  font-weight: 600 !important;
-  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3) !important;
-}
-
-.sidebar-menu a.active svg {
-  color: white !important;
-}
-
-/* ============================================ */
-/* LOGOUT */
-/* ============================================ */
-
-.logout-section {
-  margin: 12px 16px 20px 16px;
-  padding: 10px 14px;
-  border-top: 1px solid #1e293b;
-  cursor: pointer;
-  border-radius: 10px;
-  transition: all 0.2s;
-  flex-shrink: 0;
-}
-
-.logout-section a {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  color: #fca5a5;
-  text-decoration: none;
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.logout-section:hover {
-  background-color: rgba(239, 68, 68, 0.1);
-}
-
-.logout-section:hover a {
-  color: #ef4444;
-}
-
-/* ============================================ */
-/* SCROLLBAR */
-/* ============================================ */
-
-.sidebar-menu::-webkit-scrollbar {
-  width: 3px;
-}
-.sidebar-menu::-webkit-scrollbar-track {
-  background: transparent;
-}
-.sidebar-menu::-webkit-scrollbar-thumb {
-  background: #1e293b;
-  border-radius: 4px;
-}
-.sidebar-menu::-webkit-scrollbar-thumb:hover {
-  background: #334155;
-}
-
-/* ============================================ */
-/* HAMBURGER BUTTON */
-/* ============================================ */
-
-.hamburger-btn {
-  display: none;
-  position: fixed;
-  top: 14px;
-  left: 14px;
-  z-index: 2100;
-  background: #0f172a;
-  border: none;
-  color: white;
-  font-size: 22px;
-  padding: 10px 12px;
-  border-radius: 10px;
-  cursor: pointer;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
-  transition: all 0.3s ease;
-}
-
-.hamburger-btn:hover {
-  background: #1e293b;
-  transform: scale(1.05);
-}
-
-/* ============================================ */
-/* OVERLAY */
-/* ============================================ */
-
-.sidebar-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.45);
-  backdrop-filter: blur(2px);
-  z-index: 1999;
-  display: none;
-}
-
-.sidebar-overlay.active {
-  display: block;
-}
-
-/* ============================================ */
-/* RESPONSIVE - LAPTOP (1025px+) */
-/* ============================================ */
-
-@media (min-width: 1025px) {
+  /* Sidebar.css - Complete */
+  
+  /* ============================================ */
+  /* SIDEBAR */
+  /* ============================================ */
+  
   .sidebar {
     width: 280px;
-    transform: translateX(0) !important;
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    background-color: #090d18;
+    color: #f8fafc;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid #162035;
+    font-family: 'Inter', sans-serif;
+    z-index: 2000;
+    transition: transform 0.3s ease-in-out, width 0.3s ease;
+    overflow: hidden;
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
   }
-
-  .hamburger-btn {
-    display: none !important;
+  
+  /* ============================================ */
+  /* HEADER */
+  /* ============================================ */
+  
+  .sidebar-header {
+    padding: 28px 24px 20px 24px;
+    border-bottom: 1px solid #1e293b;
+    flex-shrink: 0;
   }
-
-  .sidebar-overlay {
-    display: none !important;
-  }
-}
-
-/* ============================================ */
-/* RESPONSIVE - TABLET (769px - 1024px) */
-/* ============================================ */
-
-@media (max-width: 1024px) and (min-width: 769px) {
-  .sidebar {
-    width: 72px;
-    transform: translateX(0) !important;
-  }
-
-  .logo,
-  .logo-subtitle,
-  .profile-info,
-  .sidebar-menu a span {
-    display: none !important;
-  }
-
-  .sidebar-profile {
-    justify-content: center;
-    padding: 10px;
-    margin: 12px 10px;
-  }
-
-  .avatar {
-    width: 36px;
-    height: 36px;
-    font-size: 13px;
-  }
-
-  .sidebar-menu a {
-    justify-content: center;
-    padding: 10px;
-  }
-
-  .sidebar-menu a svg {
+  
+  .logo {
     margin: 0;
-    font-size: 19px;
+    font-size: 22px;
+    font-weight: 800;
+    color: #ffffff;
+    letter-spacing: -0.5px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
   }
-
-  .logout-section {
-    justify-content: center;
-    padding: 10px;
-    margin: 12px 10px 16px 10px;
+  
+  .logo-image {
+    height: 32px;
+    width: auto;
+    border-radius: 6px;
+    object-fit: contain;
   }
-  .logout-section a {
-    justify-content: center;
+  
+  .logo-text {
+    display: inline-flex;
+    align-items: center;
+    line-height: 1;
   }
-  .logout-section a svg {
-    font-size: 19px;
+  
+  .logo-subtitle {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: #f97316;
+    letter-spacing: 0.08em;
+    display: block;
+    margin-top: 4px;
   }
-  .logout-section a span {
-    display: none !important;
+  
+  /* ============================================ */
+  /* PROFILE */
+  /* ============================================ */
+  
+  .sidebar-profile {
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background-color: #1e293b;
+    margin: 14px 16px;
+    border-radius: 12px;
+    flex-shrink: 0;
   }
-
-  .hamburger-btn {
-    display: none !important;
-  }
-
-  .sidebar-overlay {
-    display: none !important;
-  }
-}
-
-/* ============================================ */
-/* RESPONSIVE - MOBILE (768px and below) */
-/* ============================================ */
-
-@media (max-width: 768px) {
-  .hamburger-btn {
-    display: flex !important;
+  
+  .avatar {
+    width: 42px;
+    height: 42px;
+    background: linear-gradient(135deg, #f97316, #ea580c);
+    border-radius: 50%;
+    display: flex;
     align-items: center;
     justify-content: center;
-    top: 12px;
-    left: 12px;
-    font-size: 20px;
+    font-size: 15px;
+    font-weight: 700;
+    color: white;
+    flex-shrink: 0;
+  }
+  
+  .avatar.profile-picture {
+    object-fit: cover;
+  }
+  
+  .profile-info h4 {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: white;
+  }
+  
+  .profile-info span {
+    font-size: 10px;
+    color: #94a3b8;
+    display: block;
+    margin-top: 2px;
+  }
+  
+  /* ============================================ */
+  /* MENU */
+  /* ============================================ */
+  
+  .sidebar-menu {
+    list-style: none;
+    padding: 0 12px;
+    margin: 0;
+    flex-grow: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+  
+  .sidebar-menu li {
+    margin-bottom: 2px;
+  }
+  
+  .sidebar-menu a {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    color: #94a3b8;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: 10px;
+    transition: all 0.2s;
+    position: relative;
+    white-space: nowrap;
+  }
+  
+  .sidebar-menu a svg {
+    font-size: 17px;
+    min-width: 20px;
+    flex-shrink: 0;
+  }
+  
+  .sidebar-menu a:hover {
+    background-color: rgba(249, 115, 22, 0.1);
+    color: #f97316;
+  }
+  
+  .sidebar-menu a.active {
+    background: linear-gradient(90deg, #f97316, #ea580c) !important;
+    color: white !important;
+    font-weight: 600 !important;
+    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3) !important;
+  }
+  
+  .sidebar-menu a.active svg {
+    color: white !important;
+  }
+  
+  /* ============================================ */
+  /* LOGOUT */
+  /* ============================================ */
+  
+  .logout-section {
+    margin: 12px 16px 20px 16px;
+    padding: 10px 14px;
+    border-top: 1px solid #1e293b;
+    cursor: pointer;
+    border-radius: 10px;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+  
+  .logout-section a {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #fca5a5;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+  }
+  
+  .logout-section:hover {
+    background-color: rgba(239, 68, 68, 0.1);
+  }
+  
+  .logout-section:hover a {
+    color: #ef4444;
+  }
+  
+  /* ============================================ */
+  /* SCROLLBAR */
+  /* ============================================ */
+  
+  .sidebar-menu::-webkit-scrollbar {
+    width: 3px;
+  }
+  .sidebar-menu::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .sidebar-menu::-webkit-scrollbar-thumb {
+    background: #1e293b;
+    border-radius: 4px;
+  }
+  .sidebar-menu::-webkit-scrollbar-thumb:hover {
+    background: #334155;
+  }
+  
+  /* ============================================ */
+  /* HAMBURGER BUTTON */
+  /* ============================================ */
+  
+  .hamburger-btn {
+    display: none;
+    position: fixed;
+    top: 14px;
+    left: 14px;
+    z-index: 2100;
+    background: #0f172a;
+    border: none;
+    color: white;
+    font-size: 22px;
     padding: 10px 12px;
     border-radius: 10px;
-    background: #0f172a;
-    border: 1px solid #1e293b;
-    color: white;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-    width: 44px;
-    height: 44px;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
     transition: all 0.3s ease;
   }
-
+  
   .hamburger-btn:hover {
     background: #1e293b;
     transform: scale(1.05);
   }
-
-  .sidebar {
+  
+  /* ============================================ */
+  /* OVERLAY */
+  /* ============================================ */
+  
+  .sidebar-overlay {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: min(320px, 85vw); /* Responsive width */
-    height: 100vh;
-    transform: translateX(-100%);
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    z-index: 2000;
-    border-radius: 0 16px 16px 0;
-    box-shadow: 4px 0 30px rgba(0, 0, 0, 0.3);
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(2px);
+    z-index: 1999;
+    display: none;
   }
-
-  .sidebar.open {
-    transform: translateX(0);
-  }
-
-  /* Force show all elements when sidebar is open on mobile */
-  .sidebar.open .logo,
-  .sidebar.open .logo-subtitle,
-  .sidebar.open .profile-info,
-  .sidebar.open .sidebar-menu a span,
-  .sidebar.open .logout-section a span {
-    display: block !important;
-  }
-
-  .sidebar.open .sidebar-menu a {
-    justify-content: flex-start !important;
-  }
-
-  /* When sidebar is open, adjust header spacing */
-  .sidebar.open .sidebar-header {
-    padding: 24px 20px 16px 20px;
-  }
-
-  .sidebar.open .logo {
-    font-size: 20px;
-  }
-
-  .sidebar.open .logo-subtitle {
-    font-size: 9px;
-  }
-
-  .sidebar.open .sidebar-menu a {
-    padding: 10px 14px;
-    font-size: 13px;
-  }
-
-  .sidebar.open .sidebar-menu a svg {
-    margin: 0;
-    font-size: 18px;
-  }
-
-  .sidebar.open .sidebar-profile {
-    justify-content: flex-start;
-    padding: 14px 16px;
-    margin: 12px 14px;
-    border-radius: 10px;
-  }
-
-  .sidebar.open .logout-section {
-    justify-content: flex-start;
-    padding: 10px 14px;
-    margin: 10px 14px 16px 14px;
-  }
-
-  .sidebar.open .logout-section a {
-    justify-content: flex-start;
-    font-size: 13px;
-  }
-
+  
   .sidebar-overlay.active {
-    display: block !important;
+    display: block;
   }
-}
-
-/* ============================================ */
-/* RESPONSIVE - SMALL MOBILE (480px and below) */
-/* ============================================ */
-
-@media (max-width: 480px) {
-  .hamburger-btn {
-    top: 10px;
-    left: 10px;
-    font-size: 18px;
-    padding: 8px 10px;
-    border-radius: 8px;
-    width: 40px;
-    height: 40px;
+  
+  /* ============================================ */
+  /* RESPONSIVE - LAPTOP (1025px+) */
+  /* ============================================ */
+  
+  @media (min-width: 1025px) {
+    .sidebar {
+      width: 280px;
+      transform: translateX(0) !important;
+    }
+  
+    .hamburger-btn {
+      display: none !important;
+    }
+  
+    .sidebar-overlay {
+      display: none !important;
+    }
   }
-
-  .sidebar {
-    width: min(300px, 85vw); /* Responsive width */
-    border-radius: 0 12px 12px 0;
+  
+  /* ============================================ */
+  /* RESPONSIVE - TABLET (769px - 1024px) */
+  /* ============================================ */
+  
+  @media (max-width: 1024px) and (min-width: 769px) {
+    .sidebar {
+      width: 72px;
+      transform: translateX(0) !important;
+    }
+  
+    .logo,
+    .logo-subtitle,
+    .profile-info,
+    .sidebar-menu a span {
+      display: none !important;
+    }
+  
+    .sidebar-profile {
+      justify-content: center;
+      padding: 10px;
+      margin: 12px 10px;
+    }
+  
+    .avatar {
+      width: 36px;
+      height: 36px;
+      font-size: 13px;
+    }
+  
+    .sidebar-menu a {
+      justify-content: center;
+      padding: 10px;
+    }
+  
+    .sidebar-menu a svg {
+      margin: 0;
+      font-size: 19px;
+    }
+  
+    .logout-section {
+      justify-content: center;
+      padding: 10px;
+      margin: 12px 10px 16px 10px;
+    }
+    .logout-section a {
+      justify-content: center;
+    }
+    .logout-section a svg {
+      font-size: 19px;
+    }
+    .logout-section a span {
+      display: none !important;
+    }
+  
+    .hamburger-btn {
+      display: none !important;
+    }
+  
+    .sidebar-overlay {
+      display: none !important;
+    }
   }
-
-  .sidebar-header {
-    padding: 18px 16px 14px 16px;
+  
+  /* ============================================ */
+  /* RESPONSIVE - MOBILE (768px and below) */
+  /* ============================================ */
+  
+  @media (max-width: 768px) {
+    .hamburger-btn {
+      display: flex !important;
+      align-items: center;
+      justify-content: center;
+      top: 12px;
+      left: 12px;
+      font-size: 20px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      color: white;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      width: 44px;
+      height: 44px;
+      transition: all 0.3s ease;
+    }
+  
+    .hamburger-btn:hover {
+      background: #1e293b;
+      transform: scale(1.05);
+    }
+  
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: min(320px, 85vw); /* Responsive width */
+      height: 100vh;
+      transform: translateX(-100%);
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 2000;
+      border-radius: 0 16px 16px 0;
+      box-shadow: 4px 0 30px rgba(0, 0, 0, 0.3);
+    }
+  
+    .sidebar.open {
+      transform: translateX(0);
+    }
+  
+    /* Force show all elements when sidebar is open on mobile */
+    .sidebar.open .logo,
+    .sidebar.open .logo-subtitle,
+    .sidebar.open .profile-info,
+    .sidebar.open .sidebar-menu a span,
+    .sidebar.open .logout-section a span {
+      display: block !important;
+    }
+  
+    .sidebar.open .sidebar-menu a {
+      justify-content: flex-start !important;
+    }
+  
+    /* When sidebar is open, adjust header spacing */
+    .sidebar.open .sidebar-header {
+      padding: 24px 20px 16px 64px;
+    }
+  
+    .sidebar.open .logo {
+      font-size: 20px;
+    }
+  
+    .sidebar.open .logo-subtitle {
+      font-size: 9px;
+    }
+  
+    .sidebar.open .sidebar-menu a {
+      padding: 10px 14px;
+      font-size: 13px;
+    }
+  
+    .sidebar.open .sidebar-menu a svg {
+      margin: 0;
+      font-size: 18px;
+    }
+  
+    .sidebar.open .sidebar-profile {
+      justify-content: flex-start;
+      padding: 14px 16px;
+      margin: 12px 14px;
+      border-radius: 10px;
+    }
+  
+    .sidebar.open .logout-section {
+      justify-content: flex-start;
+      padding: 10px 14px;
+      margin: 10px 14px 16px 14px;
+    }
+  
+    .sidebar.open .logout-section a {
+      justify-content: flex-start;
+      font-size: 13px;
+    }
+  
+    .sidebar-overlay.active {
+      display: block !important;
+    }
   }
-
-  .logo {
-    font-size: 18px;
+  
+  /* ============================================ */
+  /* RESPONSIVE - SMALL MOBILE (480px and below) */
+  /* ============================================ */
+  
+  @media (max-width: 480px) {
+    .hamburger-btn {
+      top: 10px;
+      left: 10px;
+      font-size: 18px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      width: 40px;
+      height: 40px;
+    }
+  
+    .sidebar {
+      width: min(300px, 85vw); /* Responsive width */
+      border-radius: 0 12px 12px 0;
+    }
+  
+    .sidebar-header {
+      padding: 18px 16px 14px 16px;
+    }
+  
+    .logo {
+      font-size: 18px;
+    }
+    .logo-subtitle {
+      font-size: 9px;
+    }
+  
+    .sidebar-profile {
+      padding: 12px 14px;
+      margin: 10px 12px;
+      border-radius: 10px;
+    }
+  
+    .avatar {
+      width: 34px;
+      height: 34px;
+      font-size: 12px;
+    }
+  
+    .profile-info h4 {
+      font-size: 12px;
+    }
+    .profile-info span {
+      font-size: 9px;
+    }
+  
+    .sidebar-menu a {
+      font-size: 12px;
+      padding: 8px 12px;
+      gap: 10px;
+    }
+  
+    .sidebar-menu a svg {
+      font-size: 15px;
+      min-width: 18px;
+    }
+  
+    .logout-section {
+      padding: 8px 12px;
+      margin: 8px 12px 14px 12px;
+    }
+    .logout-section a {
+      font-size: 12px;
+      gap: 10px;
+    }
+  
+    /* Sidebar open state for small mobile */
+    .sidebar.open .sidebar-header {
+      padding: 16px 14px 12px 58px;
+    }
+  
+    .sidebar.open .logo {
+      font-size: 17px;
+    }
+  
+    .sidebar.open .logo-subtitle {
+      font-size: 8px;
+    }
+  
+    .sidebar.open .sidebar-profile {
+      padding: 10px 12px;
+      margin: 8px 10px;
+      border-radius: 8px;
+    }
+  
+    .sidebar.open .avatar {
+      width: 30px;
+      height: 30px;
+      font-size: 11px;
+    }
+  
+    .sidebar.open .profile-info h4 {
+      font-size: 11px;
+    }
+  
+    .sidebar.open .profile-info span {
+      font-size: 8px;
+    }
+  
+    .sidebar.open .sidebar-menu a {
+      padding: 8px 12px;
+      font-size: 12px;
+    }
+  
+    .sidebar.open .sidebar-menu a svg {
+      font-size: 15px;
+      min-width: 16px;
+    }
+  
+    .sidebar.open .logout-section {
+      padding: 7px 10px;
+      margin: 6px 10px 10px 10px;
+    }
+  
+    .sidebar.open .logout-section a {
+      font-size: 12px;
+    }
   }
-  .logo-subtitle {
-    font-size: 9px;
+  
+  /* ============================================ */
+  /* RESPONSIVE - VERY SMALL (360px and below) */
+  /* ============================================ */
+  
+  @media (max-width: 360px) {
+    .hamburger-btn {
+      top: 8px;
+      left: 8px;
+      font-size: 16px;
+      padding: 6px 8px;
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+    }
+  
+    .sidebar {
+      width: min(280px, 90vw); /* Responsive width */
+      border-radius: 0 10px 10px 0;
+    }
+  
+    .sidebar-header {
+      padding: 14px 12px 10px 12px;
+    }
+  
+    .logo {
+      font-size: 16px;
+    }
+    .logo-subtitle {
+      font-size: 8px;
+    }
+  
+    .sidebar-profile {
+      padding: 10px 12px;
+      margin: 8px 10px;
+    }
+  
+    .avatar {
+      width: 30px;
+      height: 30px;
+      font-size: 11px;
+    }
+  
+    .profile-info h4 {
+      font-size: 11px;
+    }
+  
+    .sidebar-menu a {
+      font-size: 11px;
+      padding: 6px 10px;
+      gap: 8px;
+    }
+  
+    .sidebar-menu a svg {
+      font-size: 14px;
+      min-width: 16px;
+    }
+  
+    .logout-section {
+      padding: 6px 10px;
+      margin: 6px 10px 10px 10px;
+    }
+    .logout-section a {
+      font-size: 11px;
+      gap: 8px;
+    }
+  
+    /* Very small mobile open state */
+    .sidebar.open .sidebar-header {
+      padding: 12px 10px 8px 50px;
+    }
+  
+    .sidebar.open .logo {
+      font-size: 15px;
+    }
+  
+    .sidebar.open .logo-subtitle {
+      font-size: 7px;
+    }
+  
+    .sidebar.open .sidebar-profile {
+      padding: 8px 10px;
+      margin: 6px 8px;
+      border-radius: 8px;
+    }
+  
+    .sidebar.open .avatar {
+      width: 26px;
+      height: 26px;
+      font-size: 10px;
+    }
+  
+    .sidebar.open .profile-info h4 {
+      font-size: 10px;
+    }
+  
+    .sidebar.open .profile-info span {
+      font-size: 8px;
+    }
+  
+    .sidebar.open .sidebar-menu a {
+      padding: 6px 10px;
+      font-size: 11px;
+      border-radius: 8px;
+    }
+  
+    .sidebar.open .sidebar-menu a svg {
+      font-size: 14px;
+      min-width: 14px;
+    }
+  
+    .sidebar.open .logout-section {
+      padding: 5px 8px;
+      margin: 4px 8px 8px 8px;
+    }
+  
+    .sidebar.open .logout-section a {
+      font-size: 11px;
+    }
   }
-
-  .sidebar-profile {
-    padding: 12px 14px;
-    margin: 10px 12px;
-    border-radius: 10px;
   }
-
-  .avatar {
-    width: 34px;
-    height: 34px;
-    font-size: 12px;
+  
+  /* ============================================ */
+  /* FIX: OPEN SIDEBAR LOGO OVERLAP               */
+  /* ============================================ */
+  
+  @media (max-width: 768px) {
+    .sidebar.open .sidebar-header {
+      padding-left: 68px !important;
+    }
   }
-
-  .profile-info h4 {
-    font-size: 12px;
+  
+  @media (max-width: 480px) {
+    .sidebar.open .sidebar-header {
+      padding-left: 60px !important;
+    }
   }
-  .profile-info span {
-    font-size: 9px;
+  
+  @media (max-width: 360px) {
+    .sidebar.open .sidebar-header {
+      padding-left: 52px !important;
+    }
   }
-
-  .sidebar-menu a {
-    font-size: 12px;
-    padding: 8px 12px;
-    gap: 10px;
-  }
-
-  .sidebar-menu a svg {
-    font-size: 15px;
-    min-width: 18px;
-  }
-
-  .logout-section {
-    padding: 8px 12px;
-    margin: 8px 12px 14px 12px;
-  }
-  .logout-section a {
-    font-size: 12px;
-    gap: 10px;
-  }
-
-  /* Sidebar open state for small mobile */
-  .sidebar.open .sidebar-header {
-    padding: 16px 14px 12px 14px;
-  }
-
-  .sidebar.open .logo {
-    font-size: 17px;
-  }
-
-  .sidebar.open .logo-subtitle {
-    font-size: 8px;
-  }
-
-  .sidebar.open .sidebar-profile {
-    padding: 10px 12px;
-    margin: 8px 10px;
-    border-radius: 8px;
-  }
-
-  .sidebar.open .avatar {
-    width: 30px;
-    height: 30px;
-    font-size: 11px;
-  }
-
-  .sidebar.open .profile-info h4 {
-    font-size: 11px;
-  }
-
-  .sidebar.open .profile-info span {
-    font-size: 8px;
-  }
-
-  .sidebar.open .sidebar-menu a {
-    padding: 8px 12px;
-    font-size: 12px;
-  }
-
-  .sidebar.open .sidebar-menu a svg {
-    font-size: 15px;
-    min-width: 16px;
-  }
-
-  .sidebar.open .logout-section {
-    padding: 7px 10px;
-    margin: 6px 10px 10px 10px;
-  }
-
-  .sidebar.open .logout-section a {
-    font-size: 12px;
-  }
-}
-
-/* ============================================ */
-/* RESPONSIVE - VERY SMALL (360px and below) */
-/* ============================================ */
-
-@media (max-width: 360px) {
-  .hamburger-btn {
-    top: 8px;
-    left: 8px;
-    font-size: 16px;
-    padding: 6px 8px;
-    width: 36px;
-    height: 36px;
-    border-radius: 8px;
-  }
-
-  .sidebar {
-    width: min(280px, 90vw); /* Responsive width */
-    border-radius: 0 10px 10px 0;
-  }
-
-  .sidebar-header {
-    padding: 14px 12px 10px 12px;
-  }
-
-  .logo {
-    font-size: 16px;
-  }
-  .logo-subtitle {
-    font-size: 8px;
-  }
-
-  .sidebar-profile {
-    padding: 10px 12px;
-    margin: 8px 10px;
-  }
-
-  .avatar {
-    width: 30px;
-    height: 30px;
-    font-size: 11px;
-  }
-
-  .profile-info h4 {
-    font-size: 11px;
-  }
-
-  .sidebar-menu a {
-    font-size: 11px;
-    padding: 6px 10px;
-    gap: 8px;
-  }
-
-  .sidebar-menu a svg {
-    font-size: 14px;
-    min-width: 16px;
-  }
-
-  .logout-section {
-    padding: 6px 10px;
-    margin: 6px 10px 10px 10px;
-  }
-  .logout-section a {
-    font-size: 11px;
-    gap: 8px;
-  }
-
-  /* Very small mobile open state */
-  .sidebar.open .sidebar-header {
-    padding: 12px 10px 8px 10px;
-  }
-
-  .sidebar.open .logo {
-    font-size: 15px;
-  }
-
-  .sidebar.open .logo-subtitle {
-    font-size: 7px;
-  }
-
-  .sidebar.open .sidebar-profile {
-    padding: 8px 10px;
-    margin: 6px 8px;
-    border-radius: 8px;
-  }
-
-  .sidebar.open .avatar {
-    width: 26px;
-    height: 26px;
-    font-size: 10px;
-  }
-
-  .sidebar.open .profile-info h4 {
-    font-size: 10px;
-  }
-
-  .sidebar.open .profile-info span {
-    font-size: 8px;
-  }
-
-  .sidebar.open .sidebar-menu a {
-    padding: 6px 10px;
-    font-size: 11px;
-    border-radius: 8px;
-  }
-
-  .sidebar.open .sidebar-menu a svg {
-    font-size: 14px;
-    min-width: 14px;
-  }
-
-  .sidebar.open .logout-section {
-    padding: 5px 8px;
-    margin: 4px 8px 8px 8px;
-  }
-
-  .sidebar.open .logout-section a {
-    font-size: 11px;
-  }
-}
-}
+  

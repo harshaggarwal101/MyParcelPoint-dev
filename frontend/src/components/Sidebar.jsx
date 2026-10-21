@@ -94,27 +94,13 @@ const Sidebar = () => {
       {/* ===== SIDEBAR ===== */}
       <aside className={`sidebar ${isOpen ? "open" : ""}`}>
         <div className="sidebar-header">
-          {/* Added flex styles to the h2 to align the image and text nicely */}
-          <h2
-            className="logo"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "10px",
-              margin: 0,
-            }}
-          >
+          <h2 className="logo">
             <img
               src={logoImage}
               alt="MyParcelPoint Logo"
-              style={{
-                height: "32px",
-                width: "auto",
-                borderRadius: "6px",
-                objectFit: "contain",
-              }}
+              className="logo-image"
             />
-            MyParcelPoint
+            <span className="logo-text">MyParcelPoint</span>
           </h2>
           <span className="logo-subtitle">
             {role === "ADMIN" ? "ADMIN PANEL" : "MERCHANT PANEL"}
@@ -131,8 +117,7 @@ const Sidebar = () => {
                   : `${backendUrl}${user.profilePicture}`
               }
               alt="Profile"
-              className="avatar"
-              style={{ objectFit: "cover" }}
+              className="avatar profile-picture"
             />
           ) : (
             <div className="avatar">{userInitial}</div>

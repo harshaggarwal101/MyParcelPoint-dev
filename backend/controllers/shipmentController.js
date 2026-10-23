@@ -19,6 +19,7 @@ const { determineZone, calculateShippingRates } = require("./rateCardController"
 const whatsappService = require("../services/whatsappService");
 const { triggerChannelSync } = require("../services/channelSyncService");
 const nimbuspostService = require("../services/nimbuspostService");
+const shipmozoService = require("../services/shipmozoService");
 
 // Helper to check replica set for Mongoose transactions
 const checkReplicaSet = async () => {
@@ -194,6 +195,8 @@ const PROVIDER_REGISTRY = {
   },
 };
 
+
+
 /**
  * Helper to build live NimbusPost shipment payload from LogiTrack Order & Warehouse
  */
@@ -237,6 +240,51 @@ function buildNimbusShipmentPayload(order, warehouse, courier) {
           sku: item.sku || "SKU-DEFAULT"
         }))
       : undefined
+  };
+}
+
+/**
+ * Helper to determine if a courier partner should route via Shipmozo API
+ */
+function isShipmozoCourier(courier) {
+  if (!courier) return false;
+  return (courier.apiProvider || "").toUpperCase() === "SHIPMOZO";
+}
+
+/**
+ * Helper to build live Shipmozo shipment payload from LogiTrack Order & Warehouse
+ */
+function buildShipmozoShipmentPayload(order, warehouse, courier) {
+  return {
+    orderId: order._id,
+    orderNumber: order.orderId || order.orderNumber || String(order._id),
+    consigneeName: order.customerName,
+    consigneePhone: String(order.customerPhone || order.phone),
+    consigneeEmail: order.customerEmail || "",
+    consigneeAddress: order.customerAddress || order.address,
+    consigneeAddress2: order.customerAddress2 || "",
+    consigneeCity: order.customerCity || order.city,
+    consigneeState: order.customerState || order.state,
+    consigneePincode: String(order.customerPincode || order.pincode),
+    items: (order.items && order.items.length > 0)
+      ? order.items.map(item => ({
+          name: item.name || "Product",
+          qty: Number(item.quantity || 1),
+          price: Number(item.price || order.amount || 100),
+          sku: item.sku || "SKU-DEFAULT"
+        }))
+      : undefined,
+    productName: order.productName || order.items?.[0]?.name || "Package",
+    quantity: Number(order.quantity || order.items?.[0]?.quantity || 1),
+    sku: order.sku || order.items?.[0]?.sku || "SKU-DEFAULT",
+    paymentType: order.paymentMode === "COD" ? "cod" : "prepaid",
+    codCharges: Number(order.codCharge || 0),
+    orderAmount: Number(order.amount || 0),
+    weight: Number(order.weight || 0.5),
+    length: Number(order.dimensions?.length || order.length || 10),
+    breadth: Number(order.dimensions?.breadth || order.breadth || 10),
+    height: Number(order.dimensions?.height || order.height || 10),
+    pickupWarehouseId: warehouse?.warehouseId || warehouse?.shipmozoWarehouseId || "", // Required by Shipmozo
   };
 }
 
@@ -421,8 +469,8 @@ function isNimbusCourier(courier) {
   return false;
 }
 
-// ===============================
-// COURIER SERVICE (PROVIDER SWITCH - FIXED)
+/// ===============================
+// COURIER SERVICE (DYNAMIC PROVIDER SWITCH)
 // ===============================
 const CourierService = {
   async createShipment(courier, order, warehouse) {
@@ -431,28 +479,42 @@ const CourierService = {
       courierCode: courier.code 
     });
 
-    const providerKey = courier.code?.toUpperCase();
-    let provider = PROVIDER_REGISTRY[providerKey];
-    
+    // 1. SHIPMOZO ROUTING
+    if (isShipmozoCourier(courier)) {
+      const payload = buildShipmozoShipmentPayload(order, warehouse, courier);
+      const res = await shipmozoService.createShipment(payload);
+      
+      if (!res.success) throw new Error(res.message || "Shipmozo Shipment Creation Failed");
+      
+      return {
+        success: true,
+        provider: "SHIPMOZO",
+        providerShipmentId: res.orderId,
+        providerTrackingId: res.referenceId,
+        awb: res.referenceId || res.orderId, // Shipmozo uses reference_id as early AWB identifier
+        pickupsAutomaticallyScheduled: "YES",
+        lrNumber: res.referenceId || "",
+        pickupRequestId: res.orderId || "",
+        labelUrl: "",
+        manifestUrl: "",
+        trackingUrl: "",
+        status: "MANIFESTED",
+        estimatedDeliveryDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+        rawResponse: res.rawResponse
+      };
+    }
+
+    // 2. NIMBUSPOST ROUTING
+    let provider = PROVIDER_REGISTRY[courier.code?.toUpperCase()];
     if (isNimbusCourier(courier)) {
       provider = PROVIDER_REGISTRY.NIMBUSPOST;
     }
 
     if (!provider) {
-      logger.error(`Unsupported courier: ${courier.code}`, { 
-        courierCode: courier.code,
-        availableCodes: Object.keys(PROVIDER_REGISTRY) 
-      });
       throw new Error(`Courier ${courier.code} is not supported`);
     }
 
     const result = await provider(order, warehouse, courier);
-
-    logger.info(`Shipment created successfully`, { 
-      awb: result.response.awb,
-      provider: result.provider 
-    });
-
     return {
       success: result.success,
       provider: result.provider,
@@ -473,167 +535,89 @@ const CourierService = {
 
   async cancelShipment(courier, shipmentId, awb) {
     logger.info(`Cancelling shipment for courier: ${courier.code}`, { shipmentId, awb });
+    const targetAwb = awb || shipmentId;
 
-    if (isNimbusCourier(courier)) {
-      const targetAwb = awb || shipmentId;
-      const res = await nimbuspostService.cancelShipment(targetAwb);
-      if (!res.success) {
-        throw new Error(res.message || "NimbusPost Cancellation failed");
-      }
+    if (isShipmozoCourier(courier)) {
+      const res = await shipmozoService.cancelShipment(shipmentId, targetAwb);
+      if (!res.success) throw new Error(res.message || "Shipmozo Cancellation failed");
       return {
         success: true,
-        provider: "NIMBUSPOST",
-        response: {
-          shipment_id: shipmentId,
-          awb: targetAwb,
-          status: "CANCELLED",
-          message: res.message,
-          cancelled_at: new Date().toISOString()
-        }
+        provider: "SHIPMOZO",
+        response: { shipment_id: shipmentId, awb: targetAwb, status: "CANCELLED", message: res.message, cancelled_at: new Date().toISOString() }
       };
     }
 
-    await new Promise(resolve => setTimeout(resolve, 100));
-    const providerKey = courier.code?.toUpperCase() || "";
-    const providerName = Object.keys(PROVIDER_REGISTRY).find(key => key === providerKey) || courier.code;
-    
-    if (!PROVIDER_REGISTRY[providerKey]) {
-      logger.error(`Unsupported courier for cancellation: ${courier.code}`);
-      throw new Error(`Courier ${courier.code} is not supported`);
+    if (isNimbusCourier(courier)) {
+      const res = await nimbuspostService.cancelShipment(targetAwb);
+      if (!res.success) throw new Error(res.message || "NimbusPost Cancellation failed");
+      return {
+        success: true,
+        provider: "NIMBUSPOST",
+        response: { shipment_id: shipmentId, awb: targetAwb, status: "CANCELLED", message: res.message, cancelled_at: new Date().toISOString() }
+      };
     }
 
-    const result = createCancelResponse(providerName, shipmentId);
-    logger.info(`Shipment cancelled successfully`, { shipmentId });
-    return result;
+    const providerName = Object.keys(PROVIDER_REGISTRY).find(key => key === (courier.code?.toUpperCase() || "")) || courier.code;
+    return createCancelResponse(providerName, shipmentId);
   },
 
   async trackShipment(courier, awb) {
     logger.info(`Tracking shipment for courier: ${courier.code}`, { awb });
 
-    if (isNimbusCourier(courier)) {
-      const res = await nimbuspostService.trackShipment(awb);
+    if (isShipmozoCourier(courier)) {
+      const res = await shipmozoService.trackShipment(awb);
       if (res.success) {
-        return {
-          success: true,
-          provider: "NIMBUSPOST",
-          response: {
-            awb: res.awb,
-            status: res.status,
-            rawStatus: res.rawStatus,
-            history: res.history,
-            rawResponse: res.data
-          }
-        };
+        return { success: true, provider: "SHIPMOZO", response: { awb: res.awb, status: res.status, rawStatus: res.rawStatus, history: res.history, rawResponse: res.data } };
       }
     }
 
-    await new Promise(resolve => setTimeout(resolve, 100));
-    const providerKey = courier.code?.toUpperCase() || "";
-    if (!PROVIDER_REGISTRY[providerKey]) {
-      logger.error(`Unsupported courier for tracking: ${courier.code}`);
-      throw new Error(`Courier ${courier.code} is not supported`);
+    if (isNimbusCourier(courier)) {
+      const res = await nimbuspostService.trackShipment(awb);
+      if (res.success) {
+        return { success: true, provider: "NIMBUSPOST", response: { awb: res.awb, status: res.status, rawStatus: res.rawStatus, history: res.history, rawResponse: res.data } };
+      }
     }
 
-    const deliveryDaysMap = {
-      "DELHIVERY": 3,
-      "BLUEDART": 2,
-      "DTDC": 3,
-      "XPRESSBEES": 3,
-      "XPB": 3,
-      "SHADOWFAX": 1,
-      "ECOMEXPRESS": 3
-    };
-
-    const deliveryDays = deliveryDaysMap[providerKey] || 3;
+    const providerKey = courier.code?.toUpperCase() || "";
     const providerName = Object.keys(PROVIDER_REGISTRY).find(key => key === providerKey) || courier.code;
-    
-    const result = createTrackingResponse(providerName, awb, deliveryDays);
-    logger.info(`Tracking retrieved successfully`, { awb, status: result.response.status });
-    return result;
+    return createTrackingResponse(providerName, awb, 3);
   },
 
   async serviceability(courier, pincode) {
-    logger.info(`Checking serviceability for courier: ${courier.code}`, { pincode });
-
-    await new Promise(resolve => setTimeout(resolve, 100));
-
     const providerKey = courier.code?.toUpperCase();
-    const isSupported = !!PROVIDER_REGISTRY[providerKey];
-    
-    const result = createServiceabilityResponse(
-      isSupported ? providerKey : courier.code, 
-      pincode, 
-      isSupported
-    );
-
-    logger.info(`Serviceability check completed`, { 
-      courier: courier.code, 
-      serviceable: result.response.serviceable 
-    });
-    return result;
+    return createServiceabilityResponse(providerKey || courier.code, pincode, true);
   },
 
   async getRates(courier, order) {
-    logger.info(`Getting rates for courier: ${courier.code}`, { 
-      orderId: order._id,
-      weight: order.weight 
-    });
-
-    await new Promise(resolve => setTimeout(resolve, 100));
-
     const providerKey = courier.code?.toUpperCase();
-    
-    if (!PROVIDER_REGISTRY[providerKey]) {
-      logger.error(`Unsupported courier for rates: ${courier.code}`);
-      throw new Error(`Courier ${courier.code} is not supported`);
-    }
-
-    const result = createRatesResponse(providerKey, order);
-    
-    logger.info(`Rates calculated successfully`, { 
-      courier: courier.code,
-      total: result.response.rates.total 
-    });
-    return result;
+    return createRatesResponse(providerKey, order);
   },
 
   async schedulePickup(courier, shipmentId, shipmentObj) {
     logger.info(`Scheduling pickup for courier: ${courier.code}`, { shipmentId });
+    const awb = shipmentObj?.awb || shipmentId;
 
-    if (isNimbusCourier(courier)) {
-      const awb = shipmentObj?.awb || shipmentId;
-      const liveRes = await nimbuspostService.schedulePickup(awb);
-      if (!liveRes.success) {
-        throw new Error(liveRes.message || "NimbusPost schedule pickup failed");
-      }
+    if (isShipmozoCourier(courier)) {
+      // Shipmozo auto-pushes to the warehouse on creation, implicit success
       return {
         success: true,
-        provider: "NIMBUSPOST",
-        response: {
-          pickup_request_id: liveRes.pickupRequestId || `PICK-${Date.now()}`,
-          shipment_id: shipmentId,
-          awb_number: awb,
-          lr_number: liveRes.lrNumber || awb,
-          manifest_url: liveRes.manifestUrl || "",
-          status: "SCHEDULED",
-          scheduled_date: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-          message: liveRes.message || "Pickup scheduled successfully on NimbusPost"
-        }
+        provider: "SHIPMOZO",
+        response: { pickup_request_id: `PICK-${Date.now()}`, shipment_id: shipmentId, awb_number: awb, lr_number: awb, status: "SCHEDULED", scheduled_date: new Date().toISOString(), message: "Pickup scheduled on Shipmozo" }
       };
     }
 
-    await new Promise(resolve => setTimeout(resolve, 100));
-    const providerKey = courier.code?.toUpperCase() || "";
-    if (!PROVIDER_REGISTRY[providerKey]) {
-      logger.error(`Unsupported courier for pickup: ${courier.code}`);
-      throw new Error(`Courier ${courier.code} is not supported`);
+    if (isNimbusCourier(courier)) {
+      const liveRes = await nimbuspostService.schedulePickup(awb);
+      if (!liveRes.success) throw new Error(liveRes.message || "NimbusPost schedule pickup failed");
+      return {
+        success: true,
+        provider: "NIMBUSPOST",
+        response: { pickup_request_id: liveRes.pickupRequestId || `PICK-${Date.now()}`, shipment_id: shipmentId, awb_number: awb, lr_number: liveRes.lrNumber || awb, manifest_url: liveRes.manifestUrl || "", status: "SCHEDULED", scheduled_date: new Date().toISOString(), message: liveRes.message }
+      };
     }
 
-    const providerName = Object.keys(PROVIDER_REGISTRY).find(key => key === providerKey) || courier.code;
-    const result = createPickupResponse(providerName, shipmentId);
-
-    logger.info(`Pickup scheduled successfully`, { shipmentId });
-    return result;
+    const providerName = Object.keys(PROVIDER_REGISTRY).find(key => key === (courier.code?.toUpperCase() || "")) || courier.code;
+    return createPickupResponse(providerName, shipmentId);
   }
 };
 

@@ -18,6 +18,7 @@ const {
   deleteCourier,
   handleWebhook,
   syncNimbusCouriers,
+  syncShipmozoCouriers,
 } = require("../controllers/courierController");
 
 // ========================================
@@ -31,6 +32,9 @@ router.post(
   authorizeRoles("SUPER_ADMIN"),
   syncNimbusCouriers
 );
+
+// Sync Couriers from NimbusPost
+router.post("/sync-shipmozo", authMiddleware,authorizeRoles("SUPER_ADMIN"),syncShipmozoCouriers);
 
 // Create Courier
 router.post(

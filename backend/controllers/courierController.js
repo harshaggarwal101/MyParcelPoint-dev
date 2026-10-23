@@ -3,6 +3,7 @@ const Shipment = require("../models/Shipment");
 const Order = require("../models/Order");
 const WebhookEvent = require("../models/WebhookEvent");
 const { ORDER_STATUS_MAP } = require("../constants/statusConstants");
+const shipmozoService = require("../services/shipmozoService");
 
 // ==============================
 // CREATE COURIER
@@ -10,10 +11,7 @@ const { ORDER_STATUS_MAP } = require("../constants/statusConstants");
 const createCourier = async (req, res) => {
   try {
     const exists = await Courier.findOne({
-      $or: [
-        { name: req.body.name },
-        { code: req.body.code },
-      ],
+      $or: [{ name: req.body.name }, { code: req.body.code }],
     });
 
     if (exists) {
@@ -117,14 +115,10 @@ const getCourierById = async (req, res) => {
 // ==============================
 const updateCourier = async (req, res) => {
   try {
-    const courier = await Courier.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      {
-        new: true,
-        runValidators: true,
-      }
-    );
+    const courier = await Courier.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true,
+    });
 
     if (!courier) {
       return res.status(404).json({
@@ -215,14 +209,19 @@ const handleWebhook = async (req, res) => {
     if (!awb || !status || !trackingUrl) {
       return res.status(400).json({
         success: false,
-        message: "Missing required webhook payload fields: awb, status, trackingUrl",
+        message:
+          "Missing required webhook payload fields: awb, status, trackingUrl",
       });
     }
 
-    const eventId = req.body.eventId || `${awb}_${status}_${req.body.timestamp || Date.now()}`;
+    const eventId =
+      req.body.eventId ||
+      `${awb}_${status}_${req.body.timestamp || Date.now()}`;
     const alreadyProcessed = await WebhookEvent.findOne({ eventId });
     if (alreadyProcessed) {
-      return res.status(200).json({ success: true, message: "Already processed" }); // ack without reprocessing
+      return res
+        .status(200)
+        .json({ success: true, message: "Already processed" }); // ack without reprocessing
     }
     await WebhookEvent.create({ eventId });
 
@@ -237,7 +236,9 @@ const handleWebhook = async (req, res) => {
     }
 
     if (shipment.status === "DELIVERED" || shipment.status === "CANCELLED") {
-      console.warn(`[Webhook] Terminal state shipment ${awb} cannot be updated via webhook`);
+      console.warn(
+        `[Webhook] Terminal state shipment ${awb} cannot be updated via webhook`,
+      );
       return res.status(400).json({
         success: false,
         message: `Terminal state shipment (${shipment.status}) cannot be updated`,
@@ -250,7 +251,7 @@ const handleWebhook = async (req, res) => {
     await shipment.addTrackingEvent(
       status,
       location || "Courier Webhook",
-      remarks || `Status updated via webhook: ${status}`
+      remarks || `Status updated via webhook: ${status}`,
     );
 
     const order = await Order.findById(shipment.orderId);
@@ -262,7 +263,9 @@ const handleWebhook = async (req, res) => {
       }
     }
 
-    console.log(`[Webhook] Successfully updated AWB ${awb} to status ${status}`);
+    console.log(
+      `[Webhook] Successfully updated AWB ${awb} to status ${status}`,
+    );
 
     res.status(200).json({
       success: true,
@@ -283,22 +286,38 @@ const handleWebhook = async (req, res) => {
 const nimbuspostService = require("../services/nimbuspostService");
 const RateCard = require("../models/RateCard");
 // Ensure Courier is also imported at the top of your file if it isn't already:
-// const Courier = require("../models/Courier"); 
+// const Courier = require("../models/Courier");
 
 const syncNimbusCouriers = async (req, res) => {
   try {
     const nimbusRes = await nimbuspostService.getCourierList();
 
     let nimbusCouriers = [];
-    if (nimbusRes.success && Array.isArray(nimbusRes.couriers) && nimbusRes.couriers.length > 0) {
+    if (
+      nimbusRes.success &&
+      Array.isArray(nimbusRes.couriers) &&
+      nimbusRes.couriers.length > 0
+    ) {
       nimbusCouriers = nimbusRes.couriers;
     } else {
       // Fallback standard NimbusPost courier list if API response format is empty or credentials pending
       nimbusCouriers = [
-        { id: 1, name: "Nimbus - Delhivery Surface", code: "NIMBUS_DELHIVERY_SURFACE" },
+        {
+          id: 1,
+          name: "Nimbus - Delhivery Surface",
+          code: "NIMBUS_DELHIVERY_SURFACE",
+        },
         { id: 2, name: "Nimbus - Delhivery Air", code: "NIMBUS_DELHIVERY_AIR" },
-        { id: 3, name: "Nimbus - Shadowfax Surface", code: "NIMBUS_SHADOWFAX_SURFACE" },
-        { id: 4, name: "Nimbus - Xpressbees Surface", code: "NIMBUS_XPRESSBEES_SURFACE" },
+        {
+          id: 3,
+          name: "Nimbus - Shadowfax Surface",
+          code: "NIMBUS_SHADOWFAX_SURFACE",
+        },
+        {
+          id: 4,
+          name: "Nimbus - Xpressbees Surface",
+          code: "NIMBUS_XPRESSBEES_SURFACE",
+        },
         { id: 5, name: "Nimbus - BlueDart Air", code: "NIMBUS_BLUEDART_AIR" },
         { id: 6, name: "Nimbus - Ekart Surface", code: "NIMBUS_EKART_SURFACE" },
         { id: 7, name: "Nimbus - DTDC Air", code: "NIMBUS_DTDC_AIR" },
@@ -309,8 +328,11 @@ const syncNimbusCouriers = async (req, res) => {
     const syncedCouriers = [];
 
     for (const item of nimbusCouriers) {
-      const courierName = item.name || item.courier_name || `Nimbus Courier ${item.id}`;
-      const courierCode = (item.code || `NIMBUS_${item.id}`).toUpperCase().replace(/[^A-Z0-9_]/g, "_");
+      const courierName =
+        item.name || item.courier_name || `Nimbus Courier ${item.id}`;
+      const courierCode = (item.code || `NIMBUS_${item.id}`)
+        .toUpperCase()
+        .replace(/[^A-Z0-9_]/g, "_");
 
       const existingCourier = await Courier.findOneAndUpdate(
         { $or: [{ code: courierCode }, { name: courierName }] },
@@ -329,19 +351,21 @@ const syncNimbusCouriers = async (req, res) => {
             description: `NimbusPost Integrated Logistics Partner (${courierName})`,
           },
         },
-        { upsert: true, returnDocument: 'after', runValidators: true }
+        { upsert: true, returnDocument: "after", runValidators: true },
       );
 
       syncedCouriers.push(existingCourier);
 
       // Auto-create or link global default RateCard
-      const serviceType = courierName.toLowerCase().includes("air") ? "Air" : "Surface";
-      
+      const serviceType = courierName.toLowerCase().includes("air")
+        ? "Air"
+        : "Surface";
+
       await RateCard.updateOne(
         {
           merchantId: null,
           courierPartner: courierName.toUpperCase(),
-          serviceType: serviceType
+          serviceType: serviceType,
         },
         {
           $set: {
@@ -349,7 +373,7 @@ const syncNimbusCouriers = async (req, res) => {
             isActive: true,
             enabled: true,
           },
-          // $setOnInsert ensures default pricing is only applied to brand new entries, 
+          // $setOnInsert ensures default pricing is only applied to brand new entries,
           // preventing overwrites of custom admin pricing.
           $setOnInsert: {
             forwardRates: {
@@ -370,9 +394,9 @@ const syncNimbusCouriers = async (req, res) => {
             codBuyPercentage: 1,
             fuelCharge: 0,
             gst: 18,
-          }
+          },
         },
-        { upsert: true }
+        { upsert: true },
       );
     }
 
@@ -391,6 +415,137 @@ const syncNimbusCouriers = async (req, res) => {
   }
 };
 
+// ==============================
+// SYNC COURIERS FROM SHIPMOZO
+// ==============================
+
+const syncShipmozoCouriers = async (req, res) => {
+  try {
+    const shipmozoRes = await shipmozoService.getCourierList();
+
+    let shipmozoCouriers = [];
+    if (
+      shipmozoRes.success &&
+      Array.isArray(shipmozoRes.couriers) &&
+      shipmozoRes.couriers.length > 0
+    ) {
+      shipmozoCouriers = shipmozoRes.couriers;
+    } else {
+      // Fallback list in case the API doesn't return couriers immediately
+      shipmozoCouriers = [
+        {
+          id: 101,
+          name: "Shipmozo - BlueDart Air",
+          code: "SHIPMOZO_BLUEDART_AIR",
+        },
+        {
+          id: 102,
+          name: "Shipmozo - Delhivery Surface",
+          code: "SHIPMOZO_DELHIVERY_SURFACE",
+        },
+        {
+          id: 103,
+          name: "Shipmozo - Xpressbees Surface",
+          code: "SHIPMOZO_XPRESSBEES_SURFACE",
+        },
+        {
+          id: 104,
+          name: "Shipmozo - Ecom Express",
+          code: "SHIPMOZO_ECOM_EXPRESS",
+        },
+      ];
+    }
+
+    const syncedCouriers = [];
+
+    for (const item of shipmozoCouriers) {
+      const courierName =
+        item.name || item.courier_name || `Shipmozo Courier ${item.id}`;
+      const courierCode = (item.code || `SHIPMOZO_${item.id}`)
+        .toUpperCase()
+        .replace(/[^A-Z0-9_]/g, "_");
+
+      // Upsert the Courier
+      const existingCourier = await Courier.findOneAndUpdate(
+        { $or: [{ code: courierCode }, { name: courierName }] },
+        {
+          $set: {
+            name: courierName,
+            code: courierCode,
+            apiProvider: "SHIPMOZO", // Distinguishes from NimbusPost
+            apiIntegrated: true,
+            apiStatus: "CONNECTED",
+            isActive: true,
+            type: "INTERNATIONAL",
+            supportsCOD: item.supports_cod !== false,
+            supportsPrepaid: item.supports_prepaid !== false,
+            supportsReversePickup: item.supports_reverse !== false,
+            priority: Number(item.id) || 1,
+            description: `Shipmozo Integrated Logistics Partner (${courierName})`,
+          },
+        },
+        { upsert: true, returnDocument: "after", runValidators: true },
+      );
+
+      syncedCouriers.push(existingCourier);
+
+      // Auto-create or link global default RateCard using UPSERT
+      const serviceType = courierName.toLowerCase().includes("air")
+        ? "Air"
+        : "Surface";
+
+      await RateCard.updateOne(
+        {
+          merchantId: null, // Admin default
+          courierPartner: courierName.toUpperCase(),
+          serviceType: serviceType,
+        },
+        {
+          $set: {
+            courierId: existingCourier._id,
+            isActive: true,
+            enabled: true,
+          },
+          $setOnInsert: {
+            forwardRates: {
+              rate500gm: 45,
+              rate1kg: 70,
+              rate2kg: 110,
+              rate5kg: 240,
+              additionalKg: 40,
+            },
+            zoneRates: {
+              local: 35,
+              regional: 50,
+              national: 75,
+            },
+            codCharge: 45,
+            codPercentage: 2.5,
+            codBuyCharge: 25,
+            codBuyPercentage: 1.5,
+            fuelCharge: 0,
+            gst: 18,
+          },
+        },
+        { upsert: true },
+      );
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `Successfully synced ${syncedCouriers.length} couriers from Shipmozo and created default Rate Cards.`,
+      count: syncedCouriers.length,
+      couriers: syncedCouriers,
+    });
+  } catch (error) {
+    console.error("[Sync Shipmozo Couriers Error]", error);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 module.exports = {
   createCourier,
   getCouriers,
@@ -401,4 +556,5 @@ module.exports = {
   deleteCourier,
   handleWebhook,
   syncNimbusCouriers,
+  syncShipmozoCouriers,
 };

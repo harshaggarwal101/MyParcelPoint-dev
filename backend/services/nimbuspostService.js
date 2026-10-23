@@ -244,7 +244,7 @@ async function createShipment(shipmentData) {
           sku: shipmentData.sku || "SKU-DEFAULT",
         },
       ],
-      is_rto_different: shipmentData.isRtoDifferent ? 1 : 0,
+      is_rto_different: shipmentData.isRtoDifferent ? "yes" : "no",
       rto: shipmentData.rto || {},
     };
 

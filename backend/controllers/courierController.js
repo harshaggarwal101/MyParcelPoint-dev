@@ -282,6 +282,8 @@ const handleWebhook = async (req, res) => {
 // ==============================
 const nimbuspostService = require("../services/nimbuspostService");
 const RateCard = require("../models/RateCard");
+// Ensure Courier is also imported at the top of your file if it isn't already:
+// const Courier = require("../models/Courier"); 
 
 const syncNimbusCouriers = async (req, res) => {
   try {
@@ -332,42 +334,46 @@ const syncNimbusCouriers = async (req, res) => {
 
       syncedCouriers.push(existingCourier);
 
-      // Auto-create global default RateCard if not already present
+      // Auto-create or link global default RateCard
       const serviceType = courierName.toLowerCase().includes("air") ? "Air" : "Surface";
-      const defaultRateCard = await RateCard.findOne({
-        merchantId: null,
-        courierId: existingCourier._id,
-        serviceType,
-      });
-
-      if (!defaultRateCard) {
-        await RateCard.create({
+      
+      await RateCard.updateOne(
+        {
           merchantId: null,
-          courierId: existingCourier._id,
           courierPartner: courierName.toUpperCase(),
-          serviceType,
-          isActive: true,
-          enabled: true,
-          forwardRates: {
-            rate500gm: 40,
-            rate1kg: 60,
-            rate2kg: 100,
-            rate5kg: 220,
-            additionalKg: 35,
+          serviceType: serviceType
+        },
+        {
+          $set: {
+            courierId: existingCourier._id,
+            isActive: true,
+            enabled: true,
           },
-          zoneRates: {
-            local: 30,
-            regional: 45,
-            national: 65,
-          },
-          codCharge: 40,
-          codPercentage: 2,
-          codBuyCharge: 20,
-          codBuyPercentage: 1,
-          fuelCharge: 0,
-          gst: 18,
-        });
-      }
+          // $setOnInsert ensures default pricing is only applied to brand new entries, 
+          // preventing overwrites of custom admin pricing.
+          $setOnInsert: {
+            forwardRates: {
+              rate500gm: 40,
+              rate1kg: 60,
+              rate2kg: 100,
+              rate5kg: 220,
+              additionalKg: 35,
+            },
+            zoneRates: {
+              local: 30,
+              regional: 45,
+              national: 65,
+            },
+            codCharge: 40,
+            codPercentage: 2,
+            codBuyCharge: 20,
+            codBuyPercentage: 1,
+            fuelCharge: 0,
+            gst: 18,
+          }
+        },
+        { upsert: true }
+      );
     }
 
     res.status(200).json({
@@ -395,4 +401,4 @@ module.exports = {
   deleteCourier,
   handleWebhook,
   syncNimbusCouriers,
-};
+};

@@ -467,102 +467,112 @@
 /* MATERIAL UI OVERRIDES FOR DARK THEME */
 /* ============================================ */
 
-.warehouse-table-wrapper .MuiTable-root {
-  background-color: #1c2333 !important;
-}
+/* General Table & Filter Overrides */
+.warehouse-table-wrapper .MuiTable-root { background-color: #1c2333 !important; }
+.warehouse-table-wrapper .MuiTableCell-root { border-bottom: 1px solid #2a3a52 !important; color: #a0aec0 !important; }
+.warehouse-table-wrapper .MuiTableCell-head { background-color: #1e2640 !important; color: #8896b0 !important; }
+.warehouse-table-wrapper .MuiTableRow-root:hover { background-color: #243049 !important; }
+.warehouse-table-wrapper .MuiTablePagination-root { color: #a0aec0 !important; border-top: 1px solid #2a3a52 !important; background-color: #1c2333 !important; }
 
-.warehouse-table-wrapper .MuiTableCell-root {
-  border-bottom: 1px solid #2a3a52 !important;
-  color: #a0aec0 !important;
-}
+.warehouse-search-filter .MuiOutlinedInput-root { background-color: #151c2c !important; color: #e8edf5 !important; border-radius: 12px; }
+.warehouse-search-filter .MuiOutlinedInput-notchedOutline { border-color: #2a3a52 !important; }
+.warehouse-search-filter .MuiInputLabel-root { color: #8896b0 !important; }
+.warehouse-search-filter .MuiSvgIcon-root { color: #f97316 !important; }
 
-.warehouse-table-wrapper .MuiTableCell-head {
-  background-color: #1e2640 !important;
-  color: #8896b0 !important;
-}
 
-.warehouse-table-wrapper .MuiTableRow-root:hover {
-  background-color: #243049 !important;
-}
+/* ============================================ */
+/* ENHANCED DIALOG OVERRIDES (Fixes Legibility) */
+/* ============================================ */
 
-.warehouse-table-wrapper .MuiTablePagination-root {
-  color: #a0aec0 !important;
-  border-top: 1px solid #2a3a52 !important;
-  background-color: #1c2333 !important;
-}
-
-.warehouse-search-filter .MuiOutlinedInput-root {
-  background-color: #151c2c !important;
-  color: #e8edf5 !important;
-  border-radius: 12px;
-}
-
-.warehouse-search-filter .MuiOutlinedInput-notchedOutline {
-  border-color: #2a3a52 !important;
-}
-
-.warehouse-search-filter .MuiInputLabel-root {
-  color: #8896b0 !important;
-}
-
-.warehouse-search-filter .MuiSvgIcon-root {
-  color: #f97316 !important;
-}
-
+/* Main Dialog Background */
 .warehouse-dialog .MuiDialog-paper {
-  background-color: #1c2333 !important;
+  background-color: #111827 !important; /* Deep dark background */
   border: 1px solid #2a3a52 !important;
   color: #f1f5f9 !important;
 }
 
+/* Section Cards (Paper) */
+.warehouse-dialog .MuiPaper-root:not(.MuiDialog-paper) {
+  background-color: #1c2333 !important; /* Lighter than bg for contrast */
+  color: #f1f5f9 !important;
+  border: 1px solid #2a3a52 !important;
+}
+
+/* Fix Blinding White Lines Under Section Titles */
+.warehouse-dialog .MuiTypography-root {
+  color: #f1f5f9 !important;
+  border-bottom-color: #2a3a52 !important; /* Overrides inline light mode borders */
+}
+
+/* Dialog Title & Actions Borders */
 .warehouse-dialog .MuiDialogTitle-root {
   color: #f1f5f9 !important;
   border-bottom: 1px solid #2a3a52 !important;
 }
-
-.warehouse-dialog .MuiPaper-root {
-  background-color: #1c2333 !important;
-  color: #f1f5f9 !important;
-  border: 1px solid #2a3a52 !important;
-}
-
-.warehouse-dialog .MuiTypography-root {
-  color: #f1f5f9 !important;
-}
-
-.warehouse-dialog .MuiTypography-body2 {
-  color: #a0aec0 !important;
-}
-
-.warehouse-dialog .MuiInputLabel-root {
-  color: #8896b0 !important;
-}
-
-.warehouse-dialog .MuiOutlinedInput-root {
-  background-color: #151c2c !important;
-  color: #e8edf5 !important;
-}
-
-.warehouse-dialog .MuiOutlinedInput-notchedOutline {
-  border-color: #2a3a52 !important;
-}
-
 .warehouse-dialog .MuiDialogActions-root {
   border-top: 1px solid #2a3a52 !important;
 }
 
+/* Input Fields Labels */
+.warehouse-dialog .MuiInputLabel-root {
+  color: #94a3b8 !important; /* Light slate for legibility */
+}
+.warehouse-dialog .MuiInputLabel-root.Mui-focused {
+  color: #f97316 !important; /* Orange accent on focus */
+}
+
+/* Input Fields Background, Text & Borders */
+.warehouse-dialog .MuiOutlinedInput-root {
+  background-color: #111827 !important; /* Dark input background */
+  color: #f1f5f9 !important; /* Bright crisp text */
+}
+.warehouse-dialog .MuiOutlinedInput-notchedOutline {
+  border-color: #334155 !important; /* Visible base border */
+}
+.warehouse-dialog .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline {
+  border-color: #64748b !important; /* Brighter border on hover */
+}
+.warehouse-dialog .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
+  border-color: #f97316 !important; /* Orange accent on focus */
+}
+
+/* Input Icons (Dropdown arrows, clocks) */
+.warehouse-dialog .MuiSelect-icon,
+.warehouse-dialog .MuiSvgIcon-root {
+  color: #94a3b8 !important;
+}
+
+/* Helper text (e.g., 'Optional', error messages) */
+.warehouse-dialog .MuiFormHelperText-root {
+  color: #64748b !important;
+}
+.warehouse-dialog .MuiFormHelperText-root.Mui-error {
+  color: #ef4444 !important;
+}
+
+/* Chips (Working Days Autocomplete Tags) */
+.warehouse-dialog .MuiChip-root {
+  background-color: #2a3a52 !important;
+  color: #f1f5f9 !important;
+}
+.warehouse-dialog .MuiChip-deleteIcon {
+  color: #94a3b8 !important;
+}
+.warehouse-dialog .MuiChip-deleteIcon:hover {
+  color: #f1f5f9 !important;
+}
+
+/* Delete Dialog */
 .warehouse-delete-dialog .MuiDialog-paper {
   background-color: #1c2333 !important;
   border: 1px solid #2a3a52 !important;
   color: #f1f5f9 !important;
 }
-
 .warehouse-delete-dialog .MuiDialogTitle-root {
-  color: #f87171 !important;
+  color: #ef4444 !important;
   border-bottom: 1px solid #2a3a52 !important;
 }
-
 .warehouse-delete-dialog .MuiDialogActions-root {
   border-top: 1px solid #2a3a52 !important;
 }
-
+

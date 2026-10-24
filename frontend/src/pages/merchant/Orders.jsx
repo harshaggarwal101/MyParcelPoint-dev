@@ -806,8 +806,11 @@ const Orders = () => {
                     return (
                       <tr
                         key={order._id}
-                        className={`orders-table-row ${openMenuId === order._id ? 'active-menu-row' : ''}`}
-                        style={{ position: 'relative', zIndex: openMenuId === order._id ? 100 : 1 }}
+                        className={`orders-table-row ${openMenuId === order._id ? "active-menu-row" : ""}`}
+                        style={{
+                          position: "relative",
+                          zIndex: openMenuId === order._id ? 100 : 1,
+                        }}
                       >
                         <td className="orders-table-td orders-table-checkbox">
                           <input
@@ -815,9 +818,16 @@ const Orders = () => {
                             checked={selectedOrders.includes(order._id)}
                             onChange={(e) => {
                               if (e.target.checked) {
-                                setSelectedOrders([...selectedOrders, order._id]);
+                                setSelectedOrders([
+                                  ...selectedOrders,
+                                  order._id,
+                                ]);
                               } else {
-                                setSelectedOrders(selectedOrders.filter(id => id !== order._id));
+                                setSelectedOrders(
+                                  selectedOrders.filter(
+                                    (id) => id !== order._id,
+                                  ),
+                                );
                               }
                             }}
                           />
@@ -826,7 +836,7 @@ const Orders = () => {
                           {order.orderNumber || order._id.slice(-6)}
                         </td>
                         <td className="orders-table-td orders-awb">
-                          {order.awb || '-'}
+                          {order.awb || "-"}
                         </td>
                         <td className="orders-table-td orders-customer">
                           {order.customerName || "N/A"}
@@ -837,8 +847,10 @@ const Orders = () => {
                         <td className="orders-table-td orders-courier">
                           <span className="orders-courier-badge">
                             {order.shipmentId?.courier
-                              ? order.shipmentId.courier.charAt(0).toUpperCase() +
-                              order.shipmentId.courier.slice(1)
+                              ? order.shipmentId.courier
+                                  .charAt(0)
+                                  .toUpperCase() +
+                                order.shipmentId.courier.slice(1)
                               : "-"}
                           </span>
                         </td>
@@ -846,20 +858,31 @@ const Orders = () => {
                           ₹{order.amount?.toFixed(2) || "0.00"}
                         </td>
                         <td className="orders-table-td">
-                          <span className="orders-status-badge" style={{
-                            background: statusStyle.bg,
-                            color: statusStyle.color,
-                          }}>
+                          <span
+                            className="orders-status-badge"
+                            style={{
+                              background: statusStyle.bg,
+                              color: statusStyle.color,
+                            }}
+                          >
                             {order.status || "NEW"}
                           </span>
                         </td>
                         <td className="orders-table-td orders-date">
-                          <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                          <div
+                            style={{
+                              display: "flex",
+                              flexDirection: "column",
+                              gap: 2,
+                            }}
+                          >
                             {getSyncBadge(order)}
                           </div>
                         </td>
                         <td className="orders-table-td orders-date">
-                          {order.createdAt ? format(new Date(order.createdAt), 'dd MMM yyyy') : "N/A"}
+                          {order.createdAt
+                            ? format(new Date(order.createdAt), "dd MMM yyyy")
+                            : "N/A"}
                         </td>
                         <td className="orders-table-td">
                           <div className="action-menu-container">
@@ -870,19 +893,21 @@ const Orders = () => {
                                   setOpenMenuId(null);
                                   setMenuPos(null);
                                 } else {
-                                  const rect = e.currentTarget.getBoundingClientRect();
-                                  const spaceBelow = window.innerHeight - rect.bottom;
+                                  const rect =
+                                    e.currentTarget.getBoundingClientRect();
+                                  const spaceBelow =
+                                    window.innerHeight - rect.bottom;
                                   if (spaceBelow < 260 && rect.top > 260) {
                                     setMenuPos({
                                       bottom: window.innerHeight - rect.top + 4,
                                       right: window.innerWidth - rect.right,
-                                      isUp: true
+                                      isUp: true,
                                     });
                                   } else {
                                     setMenuPos({
                                       top: rect.bottom + 4,
                                       right: window.innerWidth - rect.right,
-                                      isUp: false
+                                      isUp: false,
                                     });
                                   }
                                   setOpenMenuId(order._id);
@@ -901,12 +926,18 @@ const Orders = () => {
                                 style={{
                                   position: "fixed",
                                   ...(menuPos.isUp
-                                    ? { bottom: `${menuPos.bottom}px`, top: "auto" }
-                                    : { top: `${menuPos.top}px`, bottom: "auto" }),
+                                    ? {
+                                        bottom: `${menuPos.bottom}px`,
+                                        top: "auto",
+                                      }
+                                    : {
+                                        top: `${menuPos.top}px`,
+                                        bottom: "auto",
+                                      }),
                                   right: `${menuPos.right}px`,
                                   zIndex: 999999,
-                                  background: "#ffffff",
-                                  boxShadow: "0 10px 30px rgba(0,0,0,0.2)"
+                                  background: "#1c2333",
+                                  boxShadow: "0 10px 30px rgba(0,0,0,0.2)",
                                 }}
                               >
                                 <button
@@ -919,23 +950,27 @@ const Orders = () => {
                                   <FaEye size={14} /> View Order
                                 </button>
 
-                                {!hasShipment && !isDelivered && !isCancelled && (
-                                  <button
-                                    onClick={() => {
-                                      navigate(`/merchant/orders/edit/${order._id}`);
-                                      setOpenMenuId(null);
-                                    }}
-                                    className="orders-menu-item orders-menu-edit"
-                                  >
-                                    <FaEdit size={14} /> Edit Order
-                                  </button>
-                                )}
+                                {!hasShipment &&
+                                  !isDelivered &&
+                                  !isCancelled && (
+                                    <button
+                                      onClick={() => {
+                                        navigate(
+                                          `/merchant/orders/edit/${order._id}`,
+                                        );
+                                        setOpenMenuId(null);
+                                      }}
+                                      className="orders-menu-item orders-menu-edit"
+                                    >
+                                      <FaEdit size={14} /> Edit Order
+                                    </button>
+                                  )}
 
                                 {!hasShipment && !isCancelled && (
                                   <button
                                     onClick={() => {
                                       navigate("/merchant/create-shipment", {
-                                        state: { order }
+                                        state: { order },
                                       });
                                       setOpenMenuId(null);
                                     }}
@@ -948,14 +983,26 @@ const Orders = () => {
                                 {hasShipment && (
                                   <button
                                     onClick={() => {
-                                      const trackingAwb = order.awb || order.shipmentId?.awb;
+                                      const trackingAwb =
+                                        order.awb || order.shipmentId?.awb;
                                       if (trackingAwb) {
-                                        navigate(`/merchant/tracking/${trackingAwb}`);
-                                      } else if (order.shipmentId?._id || typeof order.shipmentId === "string") {
-                                        const shipmentId = order.shipmentId?._id || order.shipmentId;
-                                        navigate(`/merchant/shipments/${shipmentId}`);
+                                        navigate(
+                                          `/merchant/tracking/${trackingAwb}`,
+                                        );
+                                      } else if (
+                                        order.shipmentId?._id ||
+                                        typeof order.shipmentId === "string"
+                                      ) {
+                                        const shipmentId =
+                                          order.shipmentId?._id ||
+                                          order.shipmentId;
+                                        navigate(
+                                          `/merchant/shipments/${shipmentId}`,
+                                        );
                                       } else {
-                                        alert("⚠️ Shipment tracking details not found");
+                                        alert(
+                                          "⚠️ Shipment tracking details not found",
+                                        );
                                       }
                                       setOpenMenuId(null);
                                     }}
@@ -967,7 +1014,11 @@ const Orders = () => {
 
                                 {order.shipmentId && (
                                   <button
-                                    onClick={() => handleSingleLabelClick(order.shipmentId._id)}
+                                    onClick={() =>
+                                      handleSingleLabelClick(
+                                        order.shipmentId._id,
+                                      )
+                                    }
                                     className="orders-menu-item orders-menu-label"
                                   >
                                     <FaTag size={14} /> Download Label
@@ -991,7 +1042,9 @@ const Orders = () => {
                                   <>
                                     <hr className="orders-menu-divider" />
                                     <button
-                                      onClick={() => handleCancelOrder(order._id)}
+                                      onClick={() =>
+                                        handleCancelOrder(order._id)
+                                      }
                                       className="orders-menu-item orders-menu-cancel"
                                     >
                                       <FaBan size={14} /> Cancel Order
@@ -1001,7 +1054,9 @@ const Orders = () => {
 
                                 {hasShipment && (
                                   <div className="orders-menu-disabled">
-                                    <span>⚠️ Edit disabled - Shipment exists</span>
+                                    <span>
+                                      ⚠️ Edit disabled - Shipment exists
+                                    </span>
                                   </div>
                                 )}
                               </div>

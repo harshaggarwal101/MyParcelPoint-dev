@@ -1769,6 +1769,9 @@ const deleteRateCard = async (req, res) => {
 // ================================
 // API MONITORING & HEALTH CHECKS
 // ================================
+// ================================
+// API MONITORING & HEALTH CHECKS
+// ================================
 const getApiMonitoring = async (req, res) => {
   try {
     const mongoose = require("mongoose");
@@ -1785,6 +1788,8 @@ const getApiMonitoring = async (req, res) => {
       { id: "8", name: "Wallet & Payment Billing API", endpoint: "/api/wallet", status: "Active", response: "72ms", uptime: "100%", category: "Finance", lastCheck: new Date() },
       { id: "9", name: "NDR & RTO Exception Handler", endpoint: "/api/ndr", status: "Active", response: "105ms", uptime: "99.95%", category: "Exceptions", lastCheck: new Date() },
       { id: "10", name: "Webhook Ingestion Service", endpoint: "/api/couriers/webhook", status: "Active", response: "64ms", uptime: "100%", category: "Webhooks", lastCheck: new Date() },
+      { id: "11", name: "Shipmozo Int. Courier Gateway", endpoint: "/api/couriers/shipmozo", status: "Active", response: "145ms", uptime: "99.85%", category: "Courier Integration", lastCheck: new Date() },
+      { id: "12", name: "Shipmozo Rate Calculator API", endpoint: "/api/couriers/shipmozo/rates", status: "Active", response: "130ms", uptime: "99.90%", category: "Logistics", lastCheck: new Date() }
     ];
 
     const totalApis = apis.length;

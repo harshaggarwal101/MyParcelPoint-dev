@@ -12,7 +12,7 @@ const warehouseSchema = new mongoose.Schema(
     warehouseCode: {
       type: String,
       unique: true,
-      sparse: true,         
+      sparse: true,
       uppercase: true,
       trim: true,
     },
@@ -40,14 +40,23 @@ const warehouseSchema = new mongoose.Schema(
 
     phone: {
       type: String,
-      required: true,
-      match: /^[6-9]\d{9}$/,
+      required: [true, "Phone number is required."],
+      trim: true,
+      match: [
+        /^[6-9]\d{9}$/,
+        "Please enter a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9.",
+      ],
     },
 
     alternatePhone: {
       type: String,
       default: "",
-      match: /^[6-9]\d{9}$/,
+      trim: true,
+      validate: {
+        validator: (value) => !value || /^[6-9]\d{9}$/.test(value),
+        message:
+          "Alternate phone must be a valid 10-digit Indian mobile number.",
+      },
     },
 
     email: {
@@ -136,11 +145,7 @@ const warehouseSchema = new mongoose.Schema(
 
     warehouseType: {
       type: String,
-      enum: [
-        "MAIN",
-        "BRANCH",
-        "FULFILLMENT",
-      ],
+      enum: ["MAIN", "BRANCH", "FULFILLMENT"],
       default: "MAIN",
     },
 
@@ -187,7 +192,7 @@ const warehouseSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 warehouseSchema.index({

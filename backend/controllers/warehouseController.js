@@ -36,6 +36,7 @@ exports.createWarehouse = async (req, res) => {
       isDefault,
     } = req.body;
 
+    // Validate required fields
     if (
       !warehouseName ||
       !companyName ||
@@ -52,7 +53,11 @@ exports.createWarehouse = async (req, res) => {
       });
     }
 
-    const escapedName = warehouseName.trim().replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+    // Check for duplicate warehouse names (case-insensitive)
+    const escapedName = warehouseName
+      .trim()
+      .replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
+
     const duplicate = await Warehouse.findOne({
       merchantId,
       warehouseName: {
@@ -68,15 +73,20 @@ exports.createWarehouse = async (req, res) => {
       });
     }
 
+    // If this is the default warehouse, unset other defaults
     if (isDefault) {
       await Warehouse.updateMany(
         { merchantId },
-        { $set: { isDefault: false } }
+        { $set: { isDefault: false } },
       );
     }
 
-    const warehouseCode = `WH-${Date.now()}-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`;
+    // Generate a unique warehouse code
+    const warehouseCode = `WH-${Date.now()}-${Math.floor(Math.random() * 10000)
+      .toString()
+      .padStart(4, "0")}`;
 
+    // Create warehouse
     const warehouse = await Warehouse.create({
       merchantId,
       warehouseCode,
@@ -108,15 +118,48 @@ exports.createWarehouse = async (req, res) => {
       isDefault,
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message: "Warehouse created successfully.",
       warehouse,
     });
   } catch (error) {
-    console.error(error);
+    // Log the complete error on the backend
+    console.error("Create Warehouse Error:", error);
 
-    res.status(500).json({
+    // Handle Mongoose schema validation errors
+    if (error.name === "ValidationError") {
+      const validationErrors = Object.values(error.errors).map((err) => ({
+        field: err.path,
+        message: err.message,
+      }));
+
+      return res.status(400).json({
+        success: false,
+        message: "Warehouse validation failed.",
+        errors: validationErrors,
+      });
+    }
+
+    // Handle duplicate database key errors
+    if (error.code === 11000) {
+      return res.status(409).json({
+        success: false,
+        message: "A warehouse with this unique value already exists.",
+      });
+    }
+
+    // Handle invalid field types, such as a non-numeric value
+    // supplied for a numeric field
+    if (error.name === "CastError") {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid value for field: ${error.path}.`,
+      });
+    }
+
+    // Keep unexpected internal errors generic for the client
+    return res.status(500).json({
       success: false,
       message: "Failed to create warehouse.",
     });
@@ -130,12 +173,7 @@ exports.getWarehouses = async (req, res) => {
   try {
     const merchantId = req.user.id;
 
-    const {
-      search = "",
-      status,
-      page = 1,
-      limit = 10,
-    } = req.query;
+    const { search = "", status, page = 1, limit = 10 } = req.query;
 
     const query = {
       merchantId,
@@ -182,7 +220,7 @@ exports.getWarehouses = async (req, res) => {
 
     const total = await Warehouse.countDocuments(query);
 
-    res.json({
+    return res.json({
       success: true,
       total,
       page: Number(page),
@@ -190,9 +228,9 @@ exports.getWarehouses = async (req, res) => {
       warehouses,
     });
   } catch (error) {
-    console.error(error);
+    console.error("Get Warehouses Error:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Failed to fetch warehouses.",
     });
@@ -216,14 +254,14 @@ exports.getWarehouseById = async (req, res) => {
       });
     }
 
-    res.json({
+    return res.json({
       success: true,
       warehouse,
     });
   } catch (error) {
-    console.error(error);
+    console.error("Get Warehouse By Id Error:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Failed to fetch warehouse.",
     });
@@ -256,18 +294,39 @@ exports.updateWarehouse = async (req, res) => {
           $set: {
             isDefault: false,
           },
-        }
+        },
       );
     }
 
-    // SECURITY FIX: Whitelist updatable fields instead of Object.assign(warehouse, req.body)
+    // Whitelist updatable fields
     const ALLOWED_UPDATE_FIELDS = [
-      "warehouseName", "companyName", "contactPerson", "phone", "alternatePhone",
-      "email", "gstNumber", "panNumber", "addressLine1", "addressLine2",
-      "landmark", "city", "state", "pincode", "country",
-      "pickupStartTime", "pickupEndTime", "workingDays", "warehouseType",
-      "pickupInstructions", "latitude", "longitude", "dailyCapacity",
-      "allowCOD", "allowReversePickup", "isDefault", "isActive",
+      "warehouseName",
+      "companyName",
+      "contactPerson",
+      "phone",
+      "alternatePhone",
+      "email",
+      "gstNumber",
+      "panNumber",
+      "addressLine1",
+      "addressLine2",
+      "landmark",
+      "city",
+      "state",
+      "pincode",
+      "country",
+      "pickupStartTime",
+      "pickupEndTime",
+      "workingDays",
+      "warehouseType",
+      "pickupInstructions",
+      "latitude",
+      "longitude",
+      "dailyCapacity",
+      "allowCOD",
+      "allowReversePickup",
+      "isDefault",
+      "isActive",
     ];
 
     for (const field of ALLOWED_UPDATE_FIELDS) {
@@ -278,15 +337,15 @@ exports.updateWarehouse = async (req, res) => {
 
     await warehouse.save();
 
-    res.json({
+    return res.json({
       success: true,
       message: "Warehouse updated successfully.",
       warehouse,
     });
   } catch (error) {
-    console.error(error);
+    console.error("Update Warehouse Error:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Failed to update warehouse.",
     });
@@ -317,11 +376,14 @@ exports.deleteWarehouse = async (req, res) => {
       });
     }
 
-    // Referential integrity check: Check for active shipments using this warehouse
+    // Check for active shipments using this warehouse
     const Shipment = require("../models/Shipment");
+
     const activeShipments = await Shipment.countDocuments({
       warehouseId: warehouse._id,
-      status: { $nin: ["DELIVERED", "CANCELLED", "RTO_COMPLETED"] }
+      status: {
+        $nin: ["DELIVERED", "CANCELLED", "RTO_COMPLETED"],
+      },
     });
 
     if (activeShipments > 0) {
@@ -333,14 +395,14 @@ exports.deleteWarehouse = async (req, res) => {
 
     await warehouse.deleteOne();
 
-    res.json({
+    return res.json({
       success: true,
       message: "Warehouse deleted successfully.",
     });
   } catch (error) {
-    console.error(error);
+    console.error("Delete Warehouse Error:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Failed to delete warehouse.",
     });
@@ -372,22 +434,22 @@ exports.setDefaultWarehouse = async (req, res) => {
         $set: {
           isDefault: false,
         },
-      }
+      },
     );
 
     warehouse.isDefault = true;
 
     await warehouse.save();
 
-    res.json({
+    return res.json({
       success: true,
       message: "Default warehouse updated successfully.",
       warehouse,
     });
   } catch (error) {
-    console.error(error);
+    console.error("Set Default Warehouse Error:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Failed to update default warehouse.",
     });

@@ -891,3 +891,60 @@
   cursor: not-allowed !important;
   box-shadow: none !important;
 }
+
+/* ==========================================================
+   DYNAMIC SELECTION STYLES FOR DARK THEME
+   ========================================================== */
+
+/* 1. Recommended Courier Selection */
+.recommended-item-selected {
+  border: 2px solid #818cf8 !important; /* Bright purple border */
+  /* We intentionally do NOT set a background color here so it stays dark! */
+}
+
+.selected-indicator-text {
+  margin-left: 10px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #818cf8; /* Bright readable purple */
+}
+
+/* 2. All Couriers Table Selection */
+.comparison-row-selected {
+  background-color: rgba(129, 140, 248, 0.15) !important; /* 15% opacity purple highlight */
+}
+
+.comparison-row-selected .comparison-td:first-child {
+  border-left: 3px solid #818cf8 !important;
+}
+
+.comparison-row-selected .comparison-courier-name,
+.comparison-row-selected .comparison-td-right span {
+  font-weight: 700;
+  color: #818cf8 !important; /* Light purple readable text */
+}
+
+.comparison-courier-name {
+  font-weight: 500;
+  color: #f8fafc;
+}
+
+/* Radio button and flex alignments */
+.courier-radio {
+  cursor: pointer;
+  accent-color: #818cf8;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+
+.comparison-td-radio {
+  display: flex !important;
+  align-items: center;
+  gap: 12px;
+}
+
+.courier-name-col {
+  display: flex;
+  flex-direction: column;
+}

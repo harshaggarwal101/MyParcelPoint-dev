@@ -2,8 +2,10 @@ const Courier = require("../models/Courier");
 const Shipment = require("../models/Shipment");
 const Order = require("../models/Order");
 const WebhookEvent = require("../models/WebhookEvent");
+const RateCard = require("../models/RateCard");
 const { ORDER_STATUS_MAP } = require("../constants/statusConstants");
 const shipmozoService = require("../services/shipmozoService");
+const nimbuspostService = require("../services/nimbuspostService");
 
 // ==============================
 // CREATE COURIER
@@ -221,7 +223,7 @@ const handleWebhook = async (req, res) => {
     if (alreadyProcessed) {
       return res
         .status(200)
-        .json({ success: true, message: "Already processed" }); // ack without reprocessing
+        .json({ success: true, message: "Already processed" });
     }
     await WebhookEvent.create({ eventId });
 
@@ -283,11 +285,6 @@ const handleWebhook = async (req, res) => {
 // ==============================
 // SYNC COURIERS FROM NIMBUSPOST
 // ==============================
-const nimbuspostService = require("../services/nimbuspostService");
-const RateCard = require("../models/RateCard");
-// Ensure Courier is also imported at the top of your file if it isn't already:
-// const Courier = require("../models/Courier");
-
 const syncNimbusCouriers = async (req, res) => {
   try {
     const nimbusRes = await nimbuspostService.getCourierList();
@@ -300,7 +297,6 @@ const syncNimbusCouriers = async (req, res) => {
     ) {
       nimbusCouriers = nimbusRes.couriers;
     } else {
-      // Fallback standard NimbusPost courier list if API response format is empty or credentials pending
       nimbusCouriers = [
         {
           id: 1,
@@ -328,8 +324,15 @@ const syncNimbusCouriers = async (req, res) => {
     const syncedCouriers = [];
 
     for (const item of nimbusCouriers) {
-      const courierName =
+      let courierName =
         item.name || item.courier_name || `Nimbus Courier ${item.id}`;
+
+      // Globally strip the Nimbus prefix before saving to the database
+      courierName = courierName
+        .replace("Nimbus - ", "")
+        .replace("Nimbus ", "")
+        .trim();
+
       const courierCode = (item.code || `NIMBUS_${item.id}`)
         .toUpperCase()
         .replace(/[^A-Z0-9_]/g, "_");
@@ -356,7 +359,6 @@ const syncNimbusCouriers = async (req, res) => {
 
       syncedCouriers.push(existingCourier);
 
-      // Auto-create or link global default RateCard
       const serviceType = courierName.toLowerCase().includes("air")
         ? "Air"
         : "Surface";
@@ -364,17 +366,15 @@ const syncNimbusCouriers = async (req, res) => {
       await RateCard.updateOne(
         {
           merchantId: null,
-          courierPartner: courierName.toUpperCase(),
+          courierId: existingCourier._id, // Matching by ID avoids Duplicate Key E11000 Error
           serviceType: serviceType,
         },
         {
           $set: {
-            courierId: existingCourier._id,
+            courierPartner: courierName.toUpperCase(), // Keeps name string updated
             isActive: true,
             enabled: true,
           },
-          // $setOnInsert ensures default pricing is only applied to brand new entries,
-          // preventing overwrites of custom admin pricing.
           $setOnInsert: {
             forwardRates: {
               rate500gm: 40,
@@ -418,7 +418,6 @@ const syncNimbusCouriers = async (req, res) => {
 // ==============================
 // SYNC COURIERS FROM SHIPMOZO
 // ==============================
-
 const syncShipmozoCouriers = async (req, res) => {
   try {
     const shipmozoRes = await shipmozoService.getCourierList();
@@ -431,7 +430,6 @@ const syncShipmozoCouriers = async (req, res) => {
     ) {
       shipmozoCouriers = shipmozoRes.couriers;
     } else {
-      // Fallback list in case the API doesn't return couriers immediately
       shipmozoCouriers = [
         {
           id: 101,
@@ -465,14 +463,13 @@ const syncShipmozoCouriers = async (req, res) => {
         .toUpperCase()
         .replace(/[^A-Z0-9_]/g, "_");
 
-      // Upsert the Courier
       const existingCourier = await Courier.findOneAndUpdate(
         { $or: [{ code: courierCode }, { name: courierName }] },
         {
           $set: {
             name: courierName,
             code: courierCode,
-            apiProvider: "SHIPMOZO", // Distinguishes from NimbusPost
+            apiProvider: "SHIPMOZO",
             apiIntegrated: true,
             apiStatus: "CONNECTED",
             isActive: true,
@@ -489,20 +486,19 @@ const syncShipmozoCouriers = async (req, res) => {
 
       syncedCouriers.push(existingCourier);
 
-      // Auto-create or link global default RateCard using UPSERT
       const serviceType = courierName.toLowerCase().includes("air")
         ? "Air"
         : "Surface";
 
       await RateCard.updateOne(
         {
-          merchantId: null, // Admin default
-          courierPartner: courierName.toUpperCase(),
+          merchantId: null,
+          courierId: existingCourier._id, // Also updated Shipmozo to match by ID
           serviceType: serviceType,
         },
         {
           $set: {
-            courierId: existingCourier._id,
+            courierPartner: courierName.toUpperCase(),
             isActive: true,
             enabled: true,
           },

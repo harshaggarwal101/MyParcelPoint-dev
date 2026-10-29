@@ -30,35 +30,37 @@ async function getAuthHeader(forceRefresh = false) {
     throw new Error("NimbusPost credentials missing! Please add NIMBUSPOST_EMAIL and NIMBUSPOST_PASSWORD (or NIMBUSPOST_API_KEY) in backend/.env file.");
   }
 
-  // Try Login API if credentials exist
+  // 1. Try Login API if credentials exist
   if (email && password) {
     if (cachedToken && tokenExpiresAt && Date.now() < tokenExpiresAt) {
       return { Authorization: `Bearer ${cachedToken}` };
     }
+    
     try {
       const response = await axios.post(`${NIMBUSPOST_BASE_URL}/users/login`, { email, password }, { timeout: 10000 });
+      
       if (response.data && response.data.status && response.data.data) {
         cachedToken = typeof response.data.data === 'string' ? response.data.data : (response.data.data.token || response.data.data);
-        tokenExpiresAt = Date.now() + 23 * 60 * 60 * 1000; 
-        console.log("[NimbusPost] Login successful, Bearer token cached.");
+        // Set expiration to 20 hours to prevent border-line expiration issues
+        tokenExpiresAt = Date.now() + 20 * 60 * 60 * 1000; 
+        console.log("[NimbusPost] New Bearer token generated and cached.");
         return { Authorization: `Bearer ${cachedToken}` };
       } else {
-        console.warn("[NimbusPost] Login failed with provided credentials:", response.data?.message || "Invalid email or password");
+        console.warn("[NimbusPost] Login failed with provided credentials:", response.data?.message);
       }
     } catch (err) {
       console.warn("[NimbusPost] Login attempt failed, falling back to API key authorization header:", err.response?.data || err.message);
     }
   }
 
-  // Fallback to direct API key in Bearer token format
+  // 2. Fallback to direct API key in Bearer token format
   if (apiKey) {
     const cleanKey = apiKey.startsWith("Bearer ") ? apiKey : `Bearer ${apiKey}`;
     return { Authorization: cleanKey };
   }
 
-  throw new Error("NimbusPost authentication failed: Invalid email/password and no API key available.");
+  throw new Error("NimbusPost authentication failed. Cannot retrieve valid token.");
 }
-
 
 /**
  * Status Code Mapper (NimbusPost -> LogiTrack Standard)
@@ -376,16 +378,24 @@ async function generateManifest(awbArray) {
 /**
  * 8. CANCEL SHIPMENT: POST /shipments/cancel
  */
-async function cancelShipment(awbNumber) {
+async function cancelShipment(awbNumber, retryCount = 0) {
   try {
     const headers = await getAuthHeader();
     const response = await axios.post(`${NIMBUSPOST_BASE_URL}/shipments/cancel`, { awb: awbNumber }, { headers, timeout: 10000 });
 
     if (response.data && response.data.status === false) {
       const msg = response.data.message || "Unable to cancel shipment";
+      
+      // If NimbusPost rejects due to token, flush cache and retry once
+      if ((msg.toLowerCase().includes("token") || msg.toLowerCase().includes("unauthenticated")) && retryCount === 0) {
+        console.warn(`[NimbusPost] Token rejected for AWB ${awbNumber}, forcing refresh and retrying...`);
+        await getAuthHeader(true); // Force refresh
+        return await cancelShipment(awbNumber, 1); // Retry with new token
+      }
+
       let userFriendlyMsg = msg;
       if (msg.toLowerCase().includes("unable") || msg.toLowerCase().includes("cannot") || msg.toLowerCase().includes("picked")) {
-        userFriendlyMsg = `Shipment AWB ${awbNumber} cannot be cancelled with courier as it is already in transit or processed.`;
+        userFriendlyMsg = `Shipment AWB ${awbNumber} cannot be cancelled as it is already in transit.`;
       }
       throw new Error(userFriendlyMsg);
     }
@@ -396,6 +406,13 @@ async function cancelShipment(awbNumber) {
       data: response.data.data,
     };
   } catch (error) {
+    // Check if the error from axios is a 401 Unauthorized
+    if (error.response?.status === 401 && retryCount === 0) {
+        console.warn(`[NimbusPost] 401 Unauthorized for AWB ${awbNumber}, forcing refresh and retrying...`);
+        await getAuthHeader(true);
+        return await cancelShipment(awbNumber, 1);
+    }
+
     console.error("[NimbusPost] cancelShipment error:", error.response?.data || error.message);
     return {
       success: false,

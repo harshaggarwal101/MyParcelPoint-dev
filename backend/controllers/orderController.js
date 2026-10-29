@@ -3,6 +3,12 @@ const Shipment = require("../models/Shipment");
 const fs = require("fs");
 const csv = require("csv-parser");
 const XLSX = require("xlsx");
+const {
+  cancelShipment: cancelShipmozoShipment,
+} = require("../services/shipmozoService");
+const {
+  cancelShipment: cancelNimbusShipment,
+} = require("../services/nimbuspostService");
 
 // ================================
 // HELPER FUNCTION
@@ -625,7 +631,7 @@ const uploadExcelOrders = async (req, res) => {
 };
 
 // ================================
-// CANCEL ORDER (UPDATED WITH BETTER STATUS CHECK)
+// CANCEL ORDER 
 // ================================
 const cancelOrder = async (req, res) => {
   try {
@@ -635,35 +641,57 @@ const cancelOrder = async (req, res) => {
     });
 
     if (!order) {
-      return res.status(404).json({
-        success: false,
-        message: "Order not found"
-      });
-    }
-
-    if (
-      order.shipmentId ||
-      [
-        "READY_FOR_PICKUP",
-        "SHIPPED",
-        "OUT_FOR_DELIVERY",
-        "DELIVERED"
-      ].includes(order.status)
-    ) {
-      return res.status(400).json({
-        success: false,
-        message: "Order cannot be cancelled. It already has a shipment or is already in transit/delivered."
-      });
+      return res.status(404).json({ success: false, message: "Order not found" });
     }
 
     if (order.status === "CANCELLED") {
+      return res.status(400).json({ success: false, message: "Order is already cancelled" });
+    }
+
+    if (["SHIPPED", "OUT_FOR_DELIVERY", "DELIVERED"].includes(order.status)) {
       return res.status(400).json({
         success: false,
-        message: "Order is already cancelled"
+        message: "Order cannot be cancelled as it is already in transit or delivered."
       });
     }
 
+    if (order.awb || order.status === "READY_FOR_PICKUP" || order.shipmentId) {
+      let courierRes;
+      const courierPartner = (order.courierPartner || "").toLowerCase();
+
+      // Route based on whether "shipmozo" is present in the courier name
+      if (courierPartner.includes("shipmozo")) {
+        courierRes = await cancelShipmozoShipment(order.orderNumber, order.awb);
+      } else {
+        // If it doesn't contain ShipMozo, it defaults to your NimbusPost shipments
+        courierRes = await cancelNimbusShipment(order.awb);
+      }
+      
+      if (!courierRes.success) {
+        // If the courier has no record of it, it's safe to force cancel locally
+        if (courierRes.message && courierRes.message.toLowerCase().includes("no records found")) {
+          console.warn(`[API] Courier has no record of AWB ${order.awb}. Bypassing and cancelling locally.`);
+        } else {
+          return res.status(400).json({
+            success: false,
+            message: `Courier rejection: ${courierRes.message}`
+          });
+        }
+      }
+
+      if (order.shipmentId) {
+        await Shipment.findByIdAndUpdate(order.shipmentId, { status: "CANCELLED" });
+      }
+    }
+
     order.status = "CANCELLED";
+    order.timeline.push({
+      status: "CANCELLED",
+      message: order.awb ? "Shipment voided and order cancelled" : "Order cancelled",
+      timestamp: new Date(),
+      updatedBy: req.user.id
+    });
+    
     await order.save();
 
     res.status(200).json({
@@ -672,66 +700,91 @@ const cancelOrder = async (req, res) => {
     });
 
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
+
 // ================================
-// BULK CANCEL ORDERS (UPDATED)
+// BULK CANCEL ORDERS 
 // ================================
 const bulkCancelOrders = async (req, res) => {
   try {
     const { orderIds } = req.body;
 
     if (!orderIds || !Array.isArray(orderIds) || orderIds.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "No order IDs provided",
-      });
+      return res.status(400).json({ success: false, message: "No order IDs provided" });
     }
 
-    const result = await Order.updateMany(
-      {
-        _id: { $in: orderIds },
-        merchantId: req.user.id,
-        shipmentId: null,
-        status: { 
-          $nin: [
-            "READY_FOR_PICKUP",
-            "SHIPPED", 
-            "OUT_FOR_DELIVERY",
-            "DELIVERED", 
-            "CANCELLED"
-          ]
-        },
-      },
-      {
-        status: "CANCELLED",
-      }
-    );
+    const orders = await Order.find({
+      _id: { $in: orderIds },
+      merchantId: req.user.id,
+    });
 
-    if (result.matchedCount === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "No eligible orders found for cancellation",
+    if (orders.length === 0) {
+      return res.status(404).json({ success: false, message: "No eligible orders found." });
+    }
+
+    let successCount = 0;
+    let errors = [];
+
+    for (const order of orders) {
+      if (order.status === "CANCELLED") continue;
+
+      if (["SHIPPED", "OUT_FOR_DELIVERY", "DELIVERED"].includes(order.status)) {
+        errors.push(`Order ${order.orderNumber}: Already in transit/delivered.`);
+        continue;
+      }
+
+      if (order.awb || order.status === "READY_FOR_PICKUP" || order.shipmentId) {
+        let courierRes;
+        const courierPartner = (order.courierPartner || "").toLowerCase();
+
+        // Route based on whether "shipmozo" is present in the courier name
+        if (courierPartner.includes("shipmozo")) {
+          courierRes = await cancelShipmozoShipment(order.orderNumber, order.awb);
+        } else {
+          // If it doesn't contain ShipMozo, it defaults to your NimbusPost shipments
+          courierRes = await cancelNimbusShipment(order.awb);
+        }
+        
+        if (!courierRes.success) {
+          // If the courier has no record of it, bypass the error and allow local cancellation
+          if (courierRes.message && courierRes.message.toLowerCase().includes("no records found")) {
+            console.warn(`[API] Courier has no record of AWB ${order.awb} for Order ${order.orderNumber}. Bypassing.`);
+          } else {
+            errors.push(`Order ${order.orderNumber}: ${courierRes.message}`);
+            continue; // Skip local DB update if it's a legitimate courier rejection
+          }
+        }
+
+        if (order.shipmentId) {
+          await Shipment.findByIdAndUpdate(order.shipmentId, { status: "CANCELLED" });
+        }
+      }
+
+      order.status = "CANCELLED";
+      order.timeline.push({
+        status: "CANCELLED",
+        message: order.awb ? "Bulk action: Shipment voided and order cancelled" : "Bulk action: Order cancelled",
+        timestamp: new Date(),
+        updatedBy: req.user.id
       });
+      
+      await order.save();
+      successCount++;
     }
 
     res.status(200).json({
       success: true,
-      message: `${result.modifiedCount} orders cancelled successfully`,
-      matchedCount: result.matchedCount,
-      modifiedCount: result.modifiedCount,
+      message: `Successfully cancelled ${successCount} orders.`,
+      matchedCount: orders.length,
+      modifiedCount: successCount,
+      errors: errors.length > 0 ? errors : undefined
     });
 
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 

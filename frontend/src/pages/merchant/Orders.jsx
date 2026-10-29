@@ -535,17 +535,31 @@ const Orders = () => {
     }
 
     try {
-      await api.post("/orders/bulk-cancel", {
+      const response = await api.post("/orders/bulk-cancel", {
         orderIds: selectedOrders,
       });
 
-      alert(`${selectedOrders.length} order(s) cancelled successfully.`);
+      const { message, errors } = response.data;
+
+      // Check if the backend returned partial errors (e.g., courier rejections)
+      if (errors && errors.length > 0) {
+        alert(
+          `${message}\n\n⚠️ The following issues occurred:\n- ${errors.join("\n- ")}`,
+        );
+      } else {
+        alert(
+          message ||
+            `${selectedOrders.length} order(s) cancelled successfully.`,
+        );
+      }
+
       setSelectedOrders([]);
       setShowBulkDropdown(false);
       fetchOrders();
     } catch (error) {
       console.error("Bulk cancel error:", error);
-      alert("Failed to cancel orders.");
+      // Display the specific backend error message instead of a generic failure
+      alert(error.response?.data?.message || "Failed to cancel orders.");
     }
   };
 
@@ -581,13 +595,15 @@ const Orders = () => {
     }
 
     try {
-      await api.patch(`/orders/${orderId}/cancel`);
-      alert("Order cancelled successfully.");
+      const response = await api.patch(`/orders/${orderId}/cancel`);
+      alert(response.data.message || "Order cancelled successfully.");
+
       fetchOrders();
       setOpenMenuId(null);
     } catch (error) {
       console.error("Cancel order error:", error);
-      alert("Failed to cancel order.");
+      // Display the specific backend error (e.g., "Courier rejection: ...")
+      alert(error.response?.data?.message || "Failed to cancel order.");
     }
   };
 

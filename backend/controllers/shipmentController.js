@@ -656,7 +656,7 @@ const getLogoBuffer = (logoPath) => {
 };
 
 // ===============================
-// HELPER: Render Label V2 (Professional - Premium)
+// HELPER: Render Label V2 (Single-Page Locked Grid Layout)
 // ===============================
 async function renderLabelV2(
   doc,
@@ -669,13 +669,15 @@ async function renderLabelV2(
 ) {
   const {
     logo = true,
-    customerPhone = true,
-    weight = true,
-    paymentType = true,
     useMerchantLogo = true,
     uploadedLogo = null,
-    qrCode = true,
   } = settings;
+
+  // Prevent PDFKit from auto-adding pages when drawing near the bottom edge
+  const originalBottomMargin = doc.page.margins ? doc.page.margins.bottom : 0;
+  if (doc.page.margins) {
+    doc.page.margins.bottom = 0;
+  }
 
   const hasPosition = x !== 0 || y !== 0;
   if (hasPosition) {
@@ -683,696 +685,324 @@ async function renderLabelV2(
     doc.translate(x, y);
   }
 
-  const maxWidth =
-    labelWidth || doc.page.width - (doc.page.margins?.left || 40) * 2;
   const contentX = hasPosition ? 0 : doc.page.margins?.left || 40;
   const contentY = hasPosition ? 0 : doc.page.margins?.top || 40;
+  const maxWidth = labelWidth || doc.page.width - contentX * 2;
 
-  let currentY = contentY;
-  const padding = 10;
-  const fontSize = 7.5;
-  const headerFontSize = 8.5;
+  const padding = 7;
   const boldFont = "Helvetica-Bold";
   const regularFont = "Helvetica";
 
-  const totalHeight = labelHeight || 420;
+  const order = shipment.orderId || {};
+  const items = order.items || [];
+  const displayedItemCount = Math.min(Math.max(items.length, 1), 3);
 
-  const section1Y = currentY;
-
-  // Draw the outer bounding box for the entire label
-  doc
-    .strokeColor("#000000")
-    .lineWidth(0.3)
-    .rect(contentX, section1Y, maxWidth, totalHeight)
-    .stroke();
-
-  const rightWidth = 85;
-  const rightX = contentX + maxWidth - rightWidth - 10;
-  const leftWidth = maxWidth - rightWidth - padding - 15;
+  // Column layout (60/40 split)
   const leftX = contentX + padding;
+  const colSplitX = contentX + maxWidth * 0.6;
+  const rightX = colSplitX + padding;
+  const leftColWidth = maxWidth * 0.6 - padding * 2;
+  const rightColWidth = maxWidth * 0.4 - padding * 2;
+  const shipToTextWidth = logo ? maxWidth - 105 : maxWidth - padding * 2;
 
   // ==========================================
-  // PRE-CALCULATE TEXT POSITIONS TO DETERMINE SECTION 1 HEIGHT
+  // PRE-CALCULATE DYNAMIC TEXT HEIGHTS
   // ==========================================
-  const nameY = section1Y + padding + 16;
-  const phoneY = nameY + 15;
-  const addressY =
-    customerPhone && shipment.orderId?.customerPhone ? phoneY + 13 : nameY + 13;
 
-  let addressText = shipment.orderId?.customerAddress || "N/A";
-  if (shipment.orderId?.customerCity && shipment.orderId?.customerState) {
-    addressText = `${shipment.orderId?.customerAddress || ""}, ${shipment.orderId?.customerCity || ""}, ${shipment.orderId?.customerState || ""}`;
+  // 1. Full Ship-To Address
+  let addressText = (order.customerAddress || "N/A").trim();
+  if (order.customerCity && !addressText.toLowerCase().includes(order.customerCity.toLowerCase())) {
+    addressText += `, ${order.customerCity}`;
+  }
+  if (order.customerState && !addressText.toLowerCase().includes(order.customerState.toLowerCase())) {
+    addressText += `, ${order.customerState}`;
+  }
+  if (order.customerPincode && !addressText.includes(String(order.customerPincode))) {
+    addressText += ` - ${order.customerPincode}`;
   }
 
-  // Set the font before measuring
-  doc.font(regularFont).fontSize(7).fillColor("#333333");
+  doc.font(regularFont).fontSize(7);
+  const shipToAddrHeight = doc.heightOfString(addressText, { width: shipToTextWidth });
 
-  const addressHeight = doc.heightOfString(addressText, {
-    width: leftWidth - padding,
-  });
+  // 2. Multi-word Courier Name Height
+  let rawCourier = (shipment.courier || "N/A").replace(/^nimbus\s*-\s*/i, "").trim();
+  const courierHeader = `COURIER: ${rawCourier}`;
+  doc.font(boldFont).fontSize(8.5);
+  const courierTextHeight = doc.heightOfString(courierHeader, { width: leftColWidth });
 
-  const pincodeY = addressY + addressHeight + 2;
-
-  let locationText = "";
-  if (shipment.orderId?.customerCity)
-    locationText += shipment.orderId.customerCity;
-  if (shipment.orderId?.customerState)
-    locationText += ` • ${shipment.orderId.customerState}`;
-  if (shipment.orderId?.customerPincode)
-    locationText += ` • ${shipment.orderId.customerPincode}`;
-
-  const locationHeight = locationText
-    ? doc.heightOfString(locationText, { width: leftWidth - padding })
-    : 0;
-
-  // Calculate dynamic section height based on the text
-  const minSection1Height = pincodeY + locationHeight - section1Y + padding;
-  const section1Height = Math.max(totalHeight * 0.18, minSection1Height);
+  // 3. Full Ship-From Address
+  const pickup = shipment.pickupAddress || {};
+  let fromAddr = `${pickup.addressLine1 || ""} ${pickup.addressLine2 || ""}`.trim();
+  if (pickup.city) {
+    fromAddr += `\n${pickup.city}, ${pickup.state || ""} - ${pickup.pincode || ""}`;
+  }
+  doc.font(regularFont).fontSize(6.5);
+  const shipFromAddrHeight = doc.heightOfString(fromAddr || "N/A", { width: leftColWidth });
 
   // ==========================================
-  // DRAW SECTION 1 CONTENT
+  // DYNAMIC SECTION HEIGHTS (Guaranteed Single Page)
   // ==========================================
-  doc
-    .font(boldFont)
-    .fontSize(headerFontSize)
-    .fillColor("#000000")
-    .text("SHIP TO", leftX, section1Y + padding, {
-      width: leftWidth - padding,
-      align: "left",
-    });
+  const s1H = Math.max(60, padding + 22 + shipToAddrHeight + 13 + padding);
+  const s2H = Math.max(88, padding + courierTextHeight + 60);
+  const s3H = Math.max(80, padding + 30 + shipFromAddrHeight + 13 + padding);
+  const s4H = 18 + displayedItemCount * 12 + (items.length > 3 ? 10 : 2);
+  const s5H = 58;
+  const s6H = 24; // Compact footer for MYPARCELPOINT branding only
 
-  doc
-    .font(boldFont)
-    .fontSize(9)
-    .fillColor("#000000")
-    .text(shipment.orderId?.customerName || "N/A", leftX, nameY, {
-      width: leftWidth - padding,
-      align: "left",
-    });
+  const totalHeight = s1H + s2H + s3H + s4H + s5H + s6H;
 
-  if (customerPhone && shipment.orderId?.customerPhone) {
-    doc
-      .font(regularFont)
-      .fontSize(fontSize)
-      .fillColor("#000000")
-      .text(`Phone: ${shipment.orderId.customerPhone}`, leftX, phoneY, {
-        width: leftWidth - padding,
-        align: "left",
-      });
-  }
+  // Draw outer boundary wrapping exact content height
+  doc.strokeColor("#000000").lineWidth(1).rect(contentX, contentY, maxWidth, totalHeight).stroke();
 
-  doc
-    .font(regularFont)
-    .fontSize(7)
-    .fillColor("#333333")
-    .text(addressText, leftX, addressY, {
-      width: leftWidth - padding,
-      align: "left",
-    });
+  // ==========================================
+  // SECTION 1: SHIP TO
+  // ==========================================
+  const s1Y = contentY;
 
-  if (locationText) {
-    doc.text(locationText, leftX, pincodeY, {
-      width: leftWidth - padding,
-      align: "left",
-    });
-  }
+  doc.font(boldFont).fontSize(8).fillColor("#000000")
+     .text("SHIP TO:", leftX, s1Y + padding, { width: shipToTextWidth, align: "left", lineBreak: false });
 
+  doc.font(boldFont).fontSize(9)
+     .text(order.customerName || "N/A", leftX, s1Y + padding + 10, {
+       width: shipToTextWidth, align: "left", lineBreak: false, ellipsis: true
+     });
+
+  const s1AddrY = s1Y + padding + 22;
+  doc.font(regularFont).fontSize(7).fillColor("#333333")
+     .text(addressText, leftX, s1AddrY, {
+       width: shipToTextWidth, align: "left"
+     });
+
+  doc.font(boldFont).fontSize(7).fillColor("#000000")
+     .text(`Mobile Number: ${order.customerPhone || "N/A"}`, leftX, s1AddrY + shipToAddrHeight + 3, {
+       width: shipToTextWidth, align: "left", lineBreak: false
+     });
+
+  // Top Right Logo
   if (logo) {
-    let logoImage = null;
-    if (useMerchantLogo && shipment.merchantId?.logo) {
-      logoImage = getLogoBuffer(shipment.merchantId.logo);
-    } else if (uploadedLogo) {
-      logoImage = uploadedLogo;
-    }
-
+    let logoImage = (useMerchantLogo && shipment.merchantId?.logo) ? getLogoBuffer(shipment.merchantId.logo) : uploadedLogo;
     if (logoImage) {
       try {
-        const logoX = rightX + 10;
-        const logoY = section1Y + (section1Height - 40) / 2;
-        doc.image(logoImage, logoX, logoY, {
-          fit: [65, 40],
-          align: "center",
-          valign: "center",
+        doc.image(logoImage, contentX + maxWidth - 90, s1Y + padding, {
+          fit: [80, s1H - padding * 2],
+          align: "right"
         });
       } catch (err) {
-        logger.error("Logo rendering error", { error: err.message });
-        doc
-          .strokeColor("#E0E0E0")
-          .lineWidth(0.5)
-          .rect(
-            rightX + 10,
-            section1Y + section1Height / 2 - 15,
-            rightWidth - 20,
-            30,
-          )
-          .stroke();
+        logger.error("Logo error", { error: err.message });
       }
     }
   }
 
-  currentY = section1Y + section1Height;
-  doc
-    .moveTo(contentX, currentY)
-    .lineTo(contentX + maxWidth, currentY)
-    .stroke();
+  doc.lineWidth(1).moveTo(contentX, s1Y + s1H).lineTo(contentX + maxWidth, s1Y + s1H).stroke();
 
   // ==========================================
-  // SECTION 2: SHIPMENT INFO (LEFT) + BARCODE (RIGHT)
+  // SECTION 2: COURIER & SPECS
   // ==========================================
-  const section2Height = totalHeight * 0.25;
-  const section2Y = currentY;
+  const s2Y = s1Y + s1H;
 
-  // FIX: Force to exactly 50% width to match Section 3
-  const dividerX = contentX + maxWidth * 0.5;
+  doc.lineWidth(0.5).moveTo(colSplitX, s2Y).lineTo(colSplitX, s2Y + s2H).stroke();
 
-  doc
-    .moveTo(dividerX, section2Y)
-    .lineTo(dividerX, section2Y + section2Height)
-    .stroke();
+  doc.font(boldFont).fontSize(8.5).fillColor("#000000")
+     .text(courierHeader, leftX, s2Y + padding, { width: leftColWidth, align: "left" });
 
-  // SHIPMENT INFO LEFT
-  const infoX = contentX + padding;
-  const infoWidth = maxWidth * 0.5 - padding * 2; // Aligned to 50%
-  const infoStartY = section2Y + padding + 5;
-  const infoLineHeight = 16;
-  const labelWidth_ = 50;
-  const valueWidth = infoWidth - labelWidth_ - 5;
-
-  doc
-    .font(regularFont)
-    .fontSize(6.5)
-    .fillColor("#666666")
-    .text("Courier", infoX, infoStartY, { width: labelWidth_, align: "left" });
-
-  let courierName = shipment.courier || "N/A";
-  const courierAbbreviations = {
-    Xpressbees: "XBEE",
-    "Xpressbees Surface": "XBEE",
-    Delhivery: "DLVRY",
-    "Blue Dart": "BLDART",
-    DTDC: "DTDC",
-    "Amazon Shipping": "AMZN",
-    Flipkart: "FLPK",
-    "Ecom Express": "ECOM",
-    Shadowfax: "SHDW",
-    Porter: "PRTR",
-  };
-
-  for (const [key, short] of Object.entries(courierAbbreviations)) {
-    if (courierName.includes(key)) {
-      courierName = short;
-      break;
-    }
-  }
-
-  if (courierName.length > 10) {
-    courierName = courierName.substring(0, 10) + "...";
-  }
-
-  doc
-    .font(boldFont)
-    .fontSize(7)
-    .fillColor("#000000")
-    .text(courierName, infoX + labelWidth_, infoStartY, {
-      width: valueWidth,
-      align: "left",
-      ellipsis: true,
-    });
-
-  const awbY = infoStartY + infoLineHeight;
-  doc
-    .font(regularFont)
-    .fontSize(6.5)
-    .fillColor("#666666")
-    .text("AWB", infoX, awbY, { width: labelWidth_, align: "left" });
-
-  let shortAwb = shipment.awb || "N/A";
-  if (shortAwb.length > 14) {
-    shortAwb = "..." + shortAwb.slice(-10);
-  }
-
-  doc
-    .font(boldFont)
-    .fontSize(7)
-    .fillColor("#000000")
-    .text(shortAwb, infoX + labelWidth_, awbY, {
-      width: valueWidth,
-      align: "left",
-      lineBreak: false,
-    });
-
-  if (weight) {
-    const weightY = awbY + infoLineHeight;
-    doc
-      .font(regularFont)
-      .fontSize(6.5)
-      .fillColor("#666666")
-      .text("Weight", infoX, weightY, { width: labelWidth_, align: "left" });
-    doc
-      .font(boldFont)
-      .fontSize(7)
-      .fillColor("#000000")
-      .text(
-        `${shipment.orderId?.weight || 0} Kg`,
-        infoX + labelWidth_,
-        weightY,
-        {
-          width: valueWidth,
-          align: "left",
-        },
-      );
-  }
-
-  const paymentY = awbY + infoLineHeight * 2;
-  const paymentMode = shipment.orderId?.paymentMode || "N/A";
-  const isCOD = paymentMode.toUpperCase() === "COD";
-
-  doc
-    .font(regularFont)
-    .fontSize(6.5)
-    .fillColor("#666666")
-    .text("Payment", infoX, paymentY, { width: labelWidth_, align: "left" });
-
-  doc
-    .font(boldFont)
-    .fontSize(7)
-    .fillColor("#000000")
-    .text(
-      `${isCOD ? "COD" : "PREPAID"}${isCOD ? ` ₹${shipment.orderId?.amount || 0}` : ""}`,
-      infoX + labelWidth_,
-      paymentY,
-      {
-        width: valueWidth,
-        align: "left",
-      },
-    );
-
-  // BARCODE RIGHT
-  const rightBarcodeWidth = maxWidth * 0.5 - padding * 2; // Aligned to 50%
-  const barcodeCenterX = dividerX + (maxWidth * 0.5) / 2; // Aligned to 50%
-
-  const barcodeWidth = Math.min(rightBarcodeWidth - 20, 128);
-  const barcodeHeight = section2Height - 35;
-
-  let barcodeValue = shipment.awb || "N/A";
+  const awb = shipment.awb || "N/A";
+  const barcodeTopY = s2Y + padding + courierTextHeight + 4;
+  const awbTextY = s2Y + s2H - padding - 7;
+  const bcHeight = Math.max(28, awbTextY - barcodeTopY - 4);
 
   try {
-    const barcodeBuffer = await bwipjs.toBuffer({
+    const mainBarcode = await bwipjs.toBuffer({
       bcid: "code128",
-      text: barcodeValue,
+      text: awb,
       scale: 3,
-      height: 9,
-      includetext: false,
+      height: 12,
+      includetext: false
     });
-
-    const renderedBarcodeHeight = Math.max(30, barcodeHeight - 30);
-    const barcodeX = barcodeCenterX - barcodeWidth / 2;
-    const barcodeY = section2Y + 8;
-
-    doc.image(barcodeBuffer, barcodeX, barcodeY, {
-      width: barcodeWidth,
-      height: renderedBarcodeHeight,
+    const bcWidth = Math.min(leftColWidth - 20, 180);
+    doc.image(mainBarcode, leftX + (leftColWidth - bcWidth) / 2, barcodeTopY, {
+      width: bcWidth,
+      height: bcHeight
     });
+  } catch (err) {}
 
-    const awbTextY = section2Y + section2Height - 16;
-    const awbTextWidth = maxWidth * 0.48 - padding * 2;
-    const isThermal = maxWidth < 300;
-    const awbFontSize = isThermal ? 6.5 : 8;
+  doc.font(boldFont).fontSize(8)
+     .text(`AWB: ${awb}`, leftX, awbTextY, { width: leftColWidth, align: "center", lineBreak: false });
 
-    doc
-      .font(boldFont)
-      .fontSize(awbFontSize)
-      .fillColor("#000000")
-      .text(barcodeValue, dividerX + padding, awbTextY, {
-        width: awbTextWidth,
-        align: "center",
-        lineBreak: false,
-      });
-  } catch (err) {
-    logger.error("Barcode generation error", { error: err.message });
-    doc
-      .font(boldFont)
-      .fontSize(10)
-      .fillColor("#000000")
-      .text(
-        barcodeValue,
-        dividerX + padding,
-        section2Y + section2Height / 2 - 6,
-        {
-          width: rightBarcodeWidth,
-          align: "center",
-        },
-      );
-  }
+  // Right: Specifications
+  const dim = order.dimensions || {};
+  const specs = [
+    { label: "DIMENSIONS:", val: `${dim.length || 10}x${dim.breadth || 10}x${dim.height || 10} CM` },
+    { label: "WEIGHT:", val: `${order.weight || 0.5} Kg` },
+    { label: "PAYMENT:", val: (order.paymentMode || "PREPAID").toUpperCase() },
+    { label: "INVOICE NO:", val: shipment.invoiceId?.invoiceNumber || "N/A" },
+    { label: "INVOICE DATE:", val: order.createdAt ? new Date(order.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "N/A" }
+  ];
 
-  currentY = section2Y + section2Height;
-  doc
-    .moveTo(contentX, currentY)
-    .lineTo(contentX + maxWidth, currentY)
-    .stroke();
-
-  // ==========================================
-  // SECTION 3: SHIP FROM + ORDER DETAILS
-  // ==========================================
-  const section3Y = currentY;
-  const leftFromX = contentX + padding;
-  const leftFromWidth = maxWidth * 0.5 - padding * 2;
-
-  doc
-    .font(boldFont)
-    .fontSize(headerFontSize)
-    .fillColor("#000000")
-    .text("SHIP FROM", leftFromX, section3Y + padding, {
-      width: leftFromWidth,
-      align: "left",
+  let specY = s2Y + padding - 2;
+  const specStep = (s2H - padding) / 5;
+  specs.forEach(s => {
+    doc.font(regularFont).fontSize(5.5).fillColor("#666666").text(s.label, rightX, specY, { lineBreak: false });
+    doc.font(boldFont).fontSize(6.5).fillColor("#000000").text(s.val, rightX, specY + 6, {
+      width: rightColWidth, lineBreak: false, ellipsis: true
     });
-
-  const companyY = section3Y + padding + 14;
-  doc
-    .font(boldFont)
-    .fontSize(7.5)
-    .fillColor("#000000")
-    .text(
-      shipment.merchantId?.companyName || "MyParcelPoint",
-      leftFromX,
-      companyY,
-      {
-        width: leftFromWidth,
-        align: "left",
-      },
-    );
-
-  const pickup = shipment.pickupAddress || {};
-  let currentFromY = companyY + 11;
-
-  doc.font(regularFont).fontSize(6.5).fillColor("#333333");
-
-  if (pickup.warehouseName) {
-    doc.text(pickup.warehouseName, leftFromX, currentFromY, {
-      width: leftFromWidth,
-      height: 10,
-      lineBreak: false,
-    });
-    currentFromY += 9.5;
-  }
-
-  const addrStr =
-    `${pickup.addressLine1 || ""} ${pickup.addressLine2 || ""}`.trim();
-  if (addrStr) {
-    doc.text(addrStr, leftFromX, currentFromY, {
-      width: leftFromWidth,
-      height: 10,
-      lineBreak: false,
-    });
-    currentFromY += 9.5;
-  }
-
-  const cityStr =
-    `${pickup.city || ""}, ${pickup.state || ""} - ${pickup.pincode || ""}`.trim();
-  if (cityStr && cityStr !== "-") {
-    doc.text(cityStr, leftFromX, currentFromY, {
-      width: leftFromWidth,
-      height: 10,
-      lineBreak: false,
-    });
-    currentFromY += 9.5;
-  }
-
-  const contactList = [];
-  if (pickup.contactPerson)
-    contactList.push(`Contact: ${pickup.contactPerson}`);
-  if (pickup.phone) contactList.push(`Phone: ${pickup.phone}`);
-
-  if (contactList.length > 0) {
-    doc.text(contactList.join(" | "), leftFromX, currentFromY, {
-      width: leftFromWidth,
-      height: 10,
-      lineBreak: false,
-    });
-    currentFromY += 9.5;
-  }
-
-  if (shipment.merchantId?.gst) {
-    doc.text(`GST: ${shipment.merchantId.gst}`, leftFromX, currentFromY, {
-      width: leftFromWidth,
-      height: 10,
-      lineBreak: false,
-    });
-    currentFromY += 9.5;
-  }
-
-  const rightOrderX = contentX + maxWidth * 0.5 + padding;
-  const rightOrderWidth = maxWidth * 0.5 - padding * 2;
-
-  doc
-    .font(boldFont)
-    .fontSize(headerFontSize)
-    .fillColor("#000000")
-    .text("ORDER DETAILS", rightOrderX, section3Y + padding, {
-      width: rightOrderWidth,
-      align: "left",
-    });
-
-  const orderNumY = section3Y + padding + 14;
-  let orderNumber =
-    shipment.orderId?.orderNumber ||
-    shipment.orderId?._id?.toString()?.slice(-6) ||
-    "N/A";
-
-  if (orderNumber.length > 14) {
-    orderNumber = "..." + orderNumber.slice(-12);
-  }
-
-  doc
-    .font(regularFont)
-    .fontSize(6.5)
-    .fillColor("#666666")
-    .text("Order No", rightOrderX, orderNumY, { width: 55, align: "left" });
-
-  const isThermalOrder = maxWidth < 300;
-  const orderFontSize = isThermalOrder ? 6.5 : 8;
-
-  doc
-    .font(boldFont)
-    .fontSize(orderFontSize)
-    .fillColor("#000000")
-    .text(orderNumber, rightOrderX + 55, orderNumY, {
-      width: rightOrderWidth - 55,
-      align: "left",
-      lineBreak: false,
-    });
-
-  const barcodeOrderY = orderNumY + 16;
-  if (orderNumber) {
-    try {
-      const smallBarcode = await bwipjs.toBuffer({
-        bcid: "code128",
-        text: orderNumber.replace("...", ""),
-        scale: 2.5,
-        height: 8,
-        includetext: false,
-      });
-
-      const barcodeX = rightOrderX + 10;
-      const barcodeWidthSmall = Math.min(rightOrderWidth - 40, 130);
-      doc.image(smallBarcode, barcodeX, barcodeOrderY, {
-        width: barcodeWidthSmall,
-        height: 20,
-      });
-    } catch (err) {
-      logger.error("Order barcode error", { error: err.message });
-    }
-  }
-
-  const paymentStatusY = barcodeOrderY + 23;
-  doc
-    .font(boldFont)
-    .fontSize(9)
-    .fillColor("#000000")
-    .text(isCOD ? "COD" : "PREPAID", rightOrderX, paymentStatusY, {
-      width: rightOrderWidth,
-      align: "left",
-    });
-
-  const section3Height = Math.max(
-    totalHeight * 0.2,
-    currentFromY - section3Y + padding,
-  );
-  const dividerX3 = contentX + maxWidth * 0.5;
-  doc
-    .moveTo(dividerX3, section3Y)
-    .lineTo(dividerX3, section3Y + section3Height)
-    .stroke();
-
-  currentY = section3Y + section3Height;
-  doc
-    .moveTo(contentX, currentY)
-    .lineTo(contentX + maxWidth, currentY)
-    .stroke();
-
-  // ==========================================
-  // SECTION 4: ITEM DETAILS
-  // ==========================================
-  const section4Height = totalHeight * 0.12;
-  const section4Y = currentY;
-
-  doc
-    .font(boldFont)
-    .fontSize(headerFontSize)
-    .fillColor("#000000")
-    .text("ITEM DETAILS", contentX + padding, section4Y + padding, {
-      width: maxWidth - padding * 2,
-      align: "left",
-    });
-
-  const tableY = section4Y + padding + 16;
-
-  const startX = contentX + padding;
-  const totalWidth = maxWidth - padding * 2;
-  const descCol = totalWidth * 0.58;
-  const qtyCol = totalWidth * 0.12;
-  const amountCol = totalWidth * 0.3;
-
-  doc
-    .font(boldFont)
-    .fontSize(7)
-    .fillColor("#000000")
-    .text("Description", startX, tableY, { width: descCol - 5, align: "left" })
-    .text("Qty", startX + descCol, tableY, { width: qtyCol, align: "center" })
-    .text("Amount", startX + descCol + qtyCol, tableY, {
-      width: amountCol - 5,
-      align: "right",
-    });
-
-  doc
-    .strokeColor("#CCCCCC")
-    .lineWidth(0.3)
-    .moveTo(startX, tableY + 12)
-    .lineTo(startX + descCol + qtyCol + amountCol, tableY + 12)
-    .stroke();
-
-  const items = shipment.orderId?.items || [];
-  const itemY = tableY + 16;
-
-  if (items.length > 0) {
-    const item = items[0];
-    const desc = item.name || item.productName || item.sku || "Product";
-    const descDisplay = desc.length > 28 ? desc.substring(0, 28) + "..." : desc;
-    const totalAmount = (item.price || item.amount || 0) * (item.quantity || 1);
-
-    doc
-      .font(regularFont)
-      .fontSize(7.5)
-      .fillColor("#000000")
-      .text(descDisplay, startX + 4, itemY, {
-        width: descCol - 10,
-        align: "left",
-      })
-      .text((item.quantity || 1).toString(), startX + descCol, itemY, {
-        width: qtyCol,
-        align: "center",
-      })
-      .text(`₹${totalAmount}`, startX + descCol + qtyCol, itemY, {
-        width: amountCol - 6,
-        align: "right",
-      });
-
-    if (items.length > 1) {
-      doc
-        .font(regularFont)
-        .fontSize(6)
-        .fillColor("#999999")
-        .text(`+ ${items.length - 1} more`, startX + descCol + 10, itemY + 14, {
-          width: descCol - 20,
-          align: "left",
-        });
-    }
-  } else {
-    const totalAmount = shipment.orderId?.amount || 0;
-    doc
-      .font(regularFont)
-      .fontSize(7.5)
-      .fillColor("#000000")
-      .text("Product", startX + 4, itemY, {
-        width: descCol - 10,
-        align: "left",
-      })
-      .text("1", startX + descCol, itemY, {
-        width: qtyCol,
-        align: "center",
-      })
-      .text(`₹${totalAmount}`, startX + descCol + qtyCol, itemY, {
-        width: amountCol - 6,
-        align: "right",
-      });
-  }
-
-  currentY = section4Y + section4Height;
-  doc
-    .moveTo(contentX, currentY)
-    .lineTo(contentX + maxWidth, currentY)
-    .stroke();
-
-  // ==========================================
-  // SECTION 5: QR CODE + TERMS (10%)
-  // ==========================================
-  const section5Height = totalHeight * 0.1;
-  const section5Y = currentY;
-
-  const dividerX5 = contentX + maxWidth * 0.25;
-  doc
-    .moveTo(dividerX5, section5Y)
-    .lineTo(dividerX5, section5Y + section5Height)
-    .stroke();
-
-  const qrLeftX = contentX + padding;
-  const qrWidth = maxWidth * 0.25 - padding * 2;
-
-  if (qrCode) {
-    try {
-      const qrSize = Math.min(38, section5Height - 16);
-      const qrX = qrLeftX + (qrWidth - qrSize) / 2;
-      const qrY = section5Y + (section5Height - qrSize) / 2;
-
-      const qrBuffer = await QRCode.toBuffer(shipment.awb, {
-        errorCorrectionLevel: "H",
-        margin: 1,
-        scale: 5,
-      });
-
-      doc.image(qrBuffer, qrX, qrY, {
-        width: qrSize,
-        height: qrSize,
-      });
-    } catch (err) {
-      logger.error("QR generation error", { error: err.message });
-    }
-  }
-
-  const termsX = dividerX5 + 18;
-  const termsWidth = maxWidth * 0.75 - padding * 2 - 8;
-
-  doc.font(regularFont).fontSize(7).fillColor("#555555");
-
-  const termsStartY = section5Y + padding + 8;
-  const termsLineHeight = 16;
-
-  const terms = ["Handle With Care", "Track using QR"];
-
-  terms.forEach((term, index) => {
-    doc.text(term, termsX, termsStartY + index * termsLineHeight, {
-      width: termsWidth,
-      align: "left",
-    });
+    specY += specStep;
   });
 
-  if (hasPosition) {
-    doc.restore();
+  doc.lineWidth(1).moveTo(contentX, s2Y + s2H).lineTo(contentX + maxWidth, s2Y + s2H).stroke();
+
+  // ==========================================
+  // SECTION 3: SHIP FROM & ORDER
+  // ==========================================
+  const s3Y = s2Y + s2H;
+
+  doc.lineWidth(0.5).moveTo(colSplitX, s3Y).lineTo(colSplitX, s3Y + s3H).stroke();
+
+  // Left: Ship From
+  doc.font(regularFont).fontSize(6).fillColor("#333333")
+     .text("SHIPPED BY: (IF UNDELIVERED, RETURN TO)", leftX, s3Y + padding, { lineBreak: false });
+
+  doc.font(boldFont).fontSize(8).fillColor("#000000")
+     .text(shipment.merchantId?.companyName || "MyParcelPoint", leftX, s3Y + padding + 9, {
+       width: leftColWidth, lineBreak: false, ellipsis: true
+     });
+
+  doc.font(regularFont).fontSize(6).fillColor("#333333")
+     .text(`GSTIN: ${shipment.merchantId?.gst || "N/A"}`, leftX, s3Y + padding + 19, { lineBreak: false });
+
+  const s3AddrY = s3Y + padding + 28;
+  doc.font(regularFont).fontSize(6.5).fillColor("#333333")
+     .text(fromAddr || "N/A", leftX, s3AddrY, { width: leftColWidth, align: "left" });
+
+  doc.font(boldFont).fontSize(7).fillColor("#000000")
+     .text(`Mobile Number: ${pickup.phone || "N/A"}`, leftX, s3AddrY + shipFromAddrHeight + 3, {
+       width: leftColWidth, lineBreak: false
+     });
+
+  // Right: Order Details
+  const orderNum = order.orderNumber || "N/A";
+  doc.font(boldFont).fontSize(7).text("ORDER ID", rightX, s3Y + padding, {
+    width: rightColWidth, align: "right", lineBreak: false
+  });
+  doc.font(boldFont).fontSize(6.5).text(orderNum, rightX, s3Y + padding + 9, {
+    width: rightColWidth, align: "right", lineBreak: false
+  });
+
+  try {
+    const orderBarcode = await bwipjs.toBuffer({
+      bcid: "code128",
+      text: orderNum,
+      scale: 2,
+      height: 8,
+      includetext: false
+    });
+    const obcWidth = Math.min(rightColWidth - 6, 125);
+    doc.image(orderBarcode, rightX + (rightColWidth - obcWidth) / 2, s3Y + 26, {
+      width: obcWidth,
+      height: 20
+    });
+  } catch (err) {}
+
+  const pMode = (order.paymentMode || "PREPAID").toUpperCase();
+  doc.font(boldFont).fontSize(13).text(pMode, rightX, s3Y + 52, {
+    width: rightColWidth, align: "center", tracking: 1.5, lineBreak: false
+  });
+
+  doc.lineWidth(1).moveTo(contentX, s3Y + s3H).lineTo(contentX + maxWidth, s3Y + s3H).stroke();
+
+  // ==========================================
+  // SECTION 4: ITEM DETAILS TABLE
+  // ==========================================
+  const s4Y = s3Y + s3H;
+
+  const wSKU = maxWidth * 0.15;
+  const wItem = maxWidth * 0.50;
+  const wQty = maxWidth * 0.12;
+  const wAmt = maxWidth * 0.23;
+
+  const headerY = s4Y + 4;
+  doc.font(boldFont).fontSize(6)
+     .text("SKU", contentX + 4, headerY, { width: wSKU, lineBreak: false })
+     .text("ITEM", contentX + wSKU + 4, headerY, { width: wItem, lineBreak: false })
+     .text("QTY", contentX + wSKU + wItem, headerY, { width: wQty, align: "center", lineBreak: false })
+     .text("AMOUNT", contentX + wSKU + wItem + wQty, headerY, { width: wAmt - 4, align: "right", lineBreak: false });
+
+  doc.lineWidth(0.5).moveTo(contentX, s4Y + 14).lineTo(contentX + maxWidth, s4Y + 14).stroke();
+
+  [wSKU, wSKU + wItem, wSKU + wItem + wQty].forEach(offset => {
+    doc.moveTo(contentX + offset, s4Y).lineTo(contentX + offset, s4Y + s4H).stroke();
+  });
+
+  let itemY = s4Y + 18;
+
+  if (items.length > 0) {
+    items.slice(0, 3).forEach(item => {
+      const amt = (item.price || item.amount || 0) * (item.quantity || 1);
+      doc.font(regularFont).fontSize(6)
+         .text(item.sku || "-", contentX + 4, itemY, { width: wSKU - 6, height: 9, lineBreak: false, ellipsis: true })
+         .text(item.name || item.productName || "Product", contentX + wSKU + 4, itemY, { width: wItem - 8, height: 9, lineBreak: false, ellipsis: true })
+         .text((item.quantity || 1).toString(), contentX + wSKU + wItem, itemY, { width: wQty, align: "center", lineBreak: false })
+         .text(`Rs. ${amt}`, contentX + wSKU + wItem + wQty, itemY, { width: wAmt - 4, align: "right", lineBreak: false });
+      itemY += 12;
+    });
+    if (items.length > 3) {
+      doc.font(regularFont).fontSize(5).fillColor("#666666")
+         .text(`+ ${items.length - 3} more items...`, contentX + wSKU + 4, itemY, { lineBreak: false });
+    }
+  } else {
+    doc.font(regularFont).fontSize(6)
+       .text(order.sku || "-", contentX + 4, itemY, { width: wSKU - 6, lineBreak: false, ellipsis: true })
+       .text(order.productName || "Product", contentX + wSKU + 4, itemY, { width: wItem - 8, lineBreak: false, ellipsis: true })
+       .text((order.quantity || 1).toString(), contentX + wSKU + wItem, itemY, { width: wQty, align: "center", lineBreak: false })
+       .text(`Rs. ${order.amount || 0}`, contentX + wSKU + wItem + wQty, itemY, { width: wAmt - 4, align: "right", lineBreak: false });
+  }
+
+  doc.lineWidth(1).moveTo(contentX, s4Y + s4H).lineTo(contentX + maxWidth, s4Y + s4H).stroke();
+
+  // ==========================================
+  // SECTION 5: TOTALS SUMMARY
+  // ==========================================
+  const s5Y = s4Y + s4H;
+
+  let summaryY = s5Y + 4;
+  const isCOD = pMode === "COD";
+  const orderTotal = order.amount || 0;
+  const shipCharge = order.shippingCharge || 0;
+
+  doc.font(boldFont).fontSize(6.5).fillColor("#000000");
+
+  doc.text(`Shipping Charge: Rs. ${shipCharge}`, contentX, summaryY, { width: maxWidth - 10, align: "right", lineBreak: false });
+  summaryY += 10;
+
+  doc.text(`Amount from Prepaid: Rs. ${isCOD ? 0 : orderTotal}`, contentX, summaryY, { width: maxWidth - 10, align: "right", lineBreak: false });
+  summaryY += 10;
+
+  doc.text(`Amount from COD: Rs. ${isCOD ? orderTotal : 0}`, contentX, summaryY, { width: maxWidth - 10, align: "right", lineBreak: false });
+
+  doc.lineWidth(0.5).moveTo(contentX + maxWidth * 0.5, summaryY + 9).lineTo(contentX + maxWidth, summaryY + 9).stroke();
+
+  doc.font(boldFont).fontSize(8.5)
+     .text(`TOTAL: Rs. ${orderTotal}`, contentX, summaryY + 13, { width: maxWidth - 10, align: "right", lineBreak: false });
+
+  doc.lineWidth(1).moveTo(contentX, s5Y + s5H).lineTo(contentX + maxWidth, s5Y + s5H).stroke();
+
+  // ==========================================
+  // SECTION 6: FOOTER (Only MYPARCELPOINT Branding)
+  // ==========================================
+  const s6Y = s5Y + s5H;
+
+  doc.font(boldFont).fontSize(5).fillColor("#999999")
+     .text("POWERED BY:", rightX, s6Y + 4, { width: rightColWidth, align: "right", lineBreak: false });
+  doc.font(boldFont).fontSize(7.5).fillColor("#000000")
+     .text("MYPARCELPOINT", rightX, s6Y + 11, { width: rightColWidth, align: "right", tracking: 1, lineBreak: false });
+
+  if (hasPosition) doc.restore();
+  if (doc.page.margins) {
+    doc.page.margins.bottom = originalBottomMargin;
   }
 }
 
 // ===============================
-// HELPER: Render Complete Label
+// HELPER: Render Complete Label Wrapper
 // ===============================
 async function renderLabel(doc, shipment, settings = {}, labelWidth = null, labelHeight = null, x = 0, y = 0) {
   return renderLabelV2(doc, shipment, settings, labelWidth, labelHeight, x, y);
